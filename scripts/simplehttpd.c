@@ -5,12 +5,14 @@
  * Sistemas Operativos 2014/2015
  */
 
-#include "header.h" 
+#include "../includes/header.h" 
 
 int main(int argc, char ** argv) {
   struct sockaddr_in client_name;
   socklen_t client_name_len = sizeof(client_name);
   int port;
+
+  configuration_start();
 
   signal(SIGINT,catch_ctrlc);
 
@@ -294,28 +296,3 @@ void catch_ctrlc(int sig) {
   exit(0);
 }
 
-void read_file(FILE *fp) {
-  char *trash = (char *) malloc(SIZE_BUF * sizeof(char));
-  char *serverport = (char *) malloc(SIZE_BUF * sizeof(char));
-  char *scheduling = (char *) malloc(SIZE_BUF * sizeof(char));
-  char *threadpool = (char *) malloc(SIZE_BUF * sizeof(char));
-  char *allowed = (char *) malloc(SIZE_BUF * sizeof(char));
-
-  fscanf(fp, "%[^=\n]", trash);
-  fseek(fp, 1, SEEK_CUR);
-  fscanf(fp, "%[^=\n]", serverport);
-  fseek(fp, 1, SEEK_CUR);
-  fscanf(fp, "%[^,\n]", trash);
-  fseek(fp, 1, SEEK_CUR);
-  fscanf(fp, "%[^,\n]", scheduling);
-  fseek(fp, 1, SEEK_CUR);
-  fscanf(fp, "%[^,\n]", trash);
-  fseek(fp, 1, SEEK_CUR);
-  fscanf(fp, "%[^,\n]", threadpool);
-  fseek(fp, 1, SEEK_CUR);
-  fscanf(fp, "%[^,\n]", trash);
-  fseek(fp, 1, SEEK_CUR);
-  fscanf(fp, "%[^,\n]", allowed);
-  fseek(fp, 2, SEEK_CUR);
-  fclose(fp);
-}

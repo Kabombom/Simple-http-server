@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -g
 
-simplehttpd: simplehttpd.o header.h
-	$(CC) $(CFLAGS) -o simplehttpd simplehttpd.o
-simplehttpd.o: simplehttpd.c header.h
-	$(CC) $(CFLAGS) -c simplehttpd.c
+simplehttpd: scripts/simplehttpd.o includes/header.h includes/config.h
+	$(CC) $(CFLAGS) -o simplehttpd scripts/simplehttpd.o
+simplehttpd.o: scripts/simplehttpd.c includes/header.h includes/config.h
+	$(CC) $(CFLAGS) -c scripts/simplehttpd.c

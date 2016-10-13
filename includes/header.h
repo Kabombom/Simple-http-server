@@ -4,12 +4,18 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <errno.h>
 #include <ctype.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+#include <sys/shm.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+
+#include "config.h"
 
 // Produce debug information
 #define DEBUG	  	1	
