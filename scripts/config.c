@@ -22,7 +22,7 @@ void configuration_start() {
   // Place those values on the config_struct
   config -> serverport = atoi(serverport);
   config -> scheduling = scheduling;
-  config -> threadpool = threadpool;
+  config -> threadpool = atoi(threadpool);
   config -> allowed = allowed;
   return;
 }

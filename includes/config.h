@@ -9,7 +9,7 @@
 typedef struct {
   int serverport;
   char *scheduling;
-  char *threadpool;
+  int thread_pool;
   char *allowed;
 } config_struct;
 

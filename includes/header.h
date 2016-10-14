@@ -17,6 +17,7 @@
 
 // Project header files
 #include "config.h"
+#include "scheduler.h"
 
 // Produce debug information
 #define DEBUG	  	1	
