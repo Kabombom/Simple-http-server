@@ -1,11 +1,17 @@
 CC = gcc
 CFLAGS = -Wall -g
+OBJS = scripts/simplehttpd.o scripts/config.o
+PROG = simplehttpd
+PATH_simplehttpd.c = scripts/simplehttpd.c
+PATH_header.h = includes/header.h
+PATH_config.c = scripts/config.c
+PATH_config.h = config.h
 
-simplehttpd: scripts/simplehttpd.o scripts/config.o 
-	$(CC) $(CFLAGS) -o simplehttpd scripts/simplehttpd.o scripts/config.o
+all:			${PROG}
+clean:		rm ${OBJS} *~ ${PROG}
+${PROG}:	${OBJS}
+					${CC} ${CFLAGS} ${OBJS} -o $@
+.c.o:			${CC} ${CFLAGS} $< -c -o $@
 
-simplehttpd.o: scripts/simplehttpd.c includes/header.h
-	$(CC) $(CFLAGS) -c scripts/simplehttpd.c
-
-config.o: scripts/config.c includes/config.h
-	$(CC) $(CFLAGS) -c scripts/config.c
+simplehttpd.o: PATH_simplehttpd.c PATH_header.h
+config.o:  PATH_config.h

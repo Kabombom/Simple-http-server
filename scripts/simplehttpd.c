@@ -1,11 +1,11 @@
-/* 
+/*
  * -- simplehttpd.c --
  * A (very) simple HTTP server
  *
  * Sistemas Operativos 2014/2015
  */
 
-#include "../includes/header.h" 
+#include "../includes/header.h"
 
 int main(int argc, char ** argv) {
   struct sockaddr_in client_name;
@@ -30,7 +30,7 @@ int main(int argc, char ** argv) {
     exit(1);
   }
 
-  // Serve requests 
+  // Serve requests
   while (1) {
     // Accept connection on socket
     // #Exit if error occurs while connecting
@@ -47,14 +47,14 @@ int main(int argc, char ** argv) {
 
     // Verify if request is for a page or script
     if(!strncmp(req_buf, CGI_EXPR, strlen(CGI_EXPR))) {
-      execute_script(new_conn);	
+      execute_script(new_conn);
     }
     else {
       // Search file with html page and send to client
       send_page(new_conn);
     }
 
-    // Terminate connection with client 
+    // Terminate connection with client
     close(new_conn);
   }
 }
@@ -79,9 +79,9 @@ void get_request(int socket) {
       }
       req_buf[j] = '\0';
     }
-  }	
+  }
 
-  // Currently only supports GET 
+  // Currently only supports GET
   if(!found_get) {
     printf("Request from client without a GET\n");
     exit(1);
@@ -140,7 +140,7 @@ void send_page(int socket) {
     not_found(socket);
   }
   else {
-    // Page found, send to client 
+    // Page found, send to client
 
     // First send HTTP header back to client
     send_header(socket);
@@ -149,12 +149,12 @@ void send_page(int socket) {
     while(fgets(buf_tmp, SIZE_BUF, fp)) {
       send(socket, buf_tmp, strlen(buf_tmp), 0);
     }
-    
+
     // Close file
     fclose(fp);
   }
 
-  return; 
+  return;
 }
 
 
@@ -183,9 +183,9 @@ void identify(int socket) {
 
 
 // Reads a line (of at most 'n' bytes) from socket
-int read_line(int socket,int n) { 
+int read_line(int socket,int n) {
   int n_read;
-  int not_eol; 
+  int not_eol;
   int ret;
   char new_char;
 
@@ -207,7 +207,7 @@ int read_line(int socket,int n) {
       // consumes next byte on buffer (LF)
       read(socket, &new_char, sizeof(char));
       continue;
-    }		
+    }
     else {
       buf[n_read] = new_char;
       n_read++;
@@ -218,7 +218,7 @@ int read_line(int socket,int n) {
   #if DEBUG
   printf("read_line: new line read from client socket: %s\n", buf);
   #endif
-  
+
   return n_read;
 }
 
@@ -234,7 +234,7 @@ int fireup(int port) {
     return -1;
   }
 
-  // Binds new socket to listening port 
+  // Binds new socket to listening port
   name.sin_family = AF_INET;
   name.sin_port = htons(port);
   name.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -295,4 +295,3 @@ void catch_ctrlc(int sig) {
   close(socket_conn);
   exit(0);
 }
-
