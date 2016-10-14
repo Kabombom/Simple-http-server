@@ -15,6 +15,7 @@
 #include <string.h>
 #include <signal.h>
 
+// Project header files
 #include "config.h"
 
 // Produce debug information

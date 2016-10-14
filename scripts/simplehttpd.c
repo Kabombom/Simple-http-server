@@ -16,13 +16,13 @@ int main(int argc, char ** argv) {
 
   signal(SIGINT,catch_ctrlc);
 
-  // Verify number of arguments
-  if (argc != 2) {
-    printf("Usage: %s <port>\n",argv[0]);
-    exit(1);
+  // If no argument is given, load from config.txt
+  if (argc == 2) {
+    port = atoi(argv[1]);
+  } else {
+    port = config -> serverport;
   }
-  port = atoi(argv[1]);
-  printf("Listening for HTTP requests on port %d\n",port);
+  printf("Listening for HTTP requests on port %d\n", port);
 
   // Configure listening port
   // #If port given is invalid, exit
