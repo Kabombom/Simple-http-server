@@ -1,10 +1,15 @@
 #include "../includes/scheduler.h"
 
-void thread_start_routine() {
-
+void delete_scheduler_thread() {
+ printf("Cleaning up scheduler...\n");
+ pthread_exit(0);
 }
 
-void create_threads() {
+void scheduler_thread_start_routine() {
+  
+}
+
+void create_scheduler_threads() {
   int i;
   int ids[config -> thread_pool];
   thread_pool = malloc(sizeof(pthread_t) * config->thread_pool);

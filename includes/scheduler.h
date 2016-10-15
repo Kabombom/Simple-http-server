@@ -11,4 +11,6 @@ struct {
 
 pthread_t *thread_pool;
 
-void create_threads();
+void delete_scheduler_thread();
+void scheduler_thread_start_routine();
+void create_scheduler_threads();
