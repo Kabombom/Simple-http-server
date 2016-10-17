@@ -7,6 +7,27 @@
 
 #include "../includes/header.h"
 
+void create_shared_memory() { 
+  shmid = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0777);
+  if (shmid < 0) {
+    perror("Error creating shared memory");
+    exit(1);
+  }
+}
+
+void attach_shared_memory() {
+  config = (config_struct *) shmat(shmid, NULL, 0);
+  if (config == (void *) - 1) {
+    perror("Error attaching shared memory");
+    exit(1);
+  }
+}
+
+void delete_shared_memory() {
+  shmdt(config);
+  shmctl(shmid, IPC_RMID, NULL);
+}
+
 int main(int argc, char ** argv) {
   struct sockaddr_in client_name;
   socklen_t client_name_len = sizeof(client_name);
@@ -17,11 +38,7 @@ int main(int argc, char ** argv) {
   signal(SIGINT,catch_ctrlc);
 
   // If no argument is given, load from config.txt
-  if (argc == 2) {
-    port = atoi(argv[1]);
-  } else {
-    port = config -> serverport;
-  }
+  port = config -> serverport;
   printf("Listening for HTTP requests on port %d\n", port);
 
   // Configure listening port
