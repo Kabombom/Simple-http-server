@@ -1,5 +1,5 @@
 #include "../includes/scheduler.h"
-
+/*
 void delete_scheduler_thread() {
  printf("Cleaning up scheduler...\n");
  pthread_exit(0);
@@ -22,4 +22,4 @@ void create_scheduler_threads() {
     ids[i] = i;
     pthread_create(&thread_pool[i], NULL, thread_start_routine, &ids[i]);
   }
-}
+}*/

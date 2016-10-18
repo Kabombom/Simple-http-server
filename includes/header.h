@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <pthread.h>
 
 // Project header files
 #include "config.h"
@@ -44,13 +45,15 @@ void catch_ctrlc(int);
 void cannot_execute(int socket);
 
 //Processes functions
-terminate_processes();
+void create_processes();
+void terminate_processes();
 
 // Shared memory functions
 void create_shared_memory();
 void attach_shared_memory();
 void delete_shared_memory();
 
+// Threads functions
 char buf[SIZE_BUF];
 char req_buf[SIZE_BUF];
 char buf_tmp[SIZE_BUF];
@@ -67,3 +70,5 @@ int shmid;
 //Semaphore id
 int semid;
 
+// Thread_pool 
+pthread_t *thread_pool;

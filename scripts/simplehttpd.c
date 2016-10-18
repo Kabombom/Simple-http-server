@@ -7,44 +7,17 @@
 
 #include "../includes/header.h"
 
-void create_shared_memory() { 
-  shmid = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0777);
-  if (shmid < 0) {
-    perror("Error creating shared memory");
-    exit(1);
-  }
-}
-
-void attach_shared_memory() {
-  config = (config_struct *) shmat(shmid, NULL, 0);
-  if (config == (void *) - 1) {
-    perror("Error attaching shared memory");
-    exit(1);
-  }
-}
-
-void delete_shared_memory() {
-  shmdt(config);
-  shmctl(shmid, IPC_RMID, NULL);
-}
-
-void terminate_processes() {
-  kill(config_pid, SIGKILL);
-  kill(statistics_pid, SIGKILL);
-}
-
 int main(int argc, char ** argv) {
   struct sockaddr_in client_name;
   socklen_t client_name_len = sizeof(client_name);
   int port;
 
+  create_processes();
   create_shared_memory();
   attach_shared_memory();
   configuration_start();
 
-  //Testing shared mem
-  config_pid = fork();
-  statistics_pid = fork();
+  /*Testing shared mem
   if (config_pid == 0) {
     config -> serverport = 50001;
     printf("%d\n", config->serverport);
@@ -53,7 +26,7 @@ int main(int argc, char ** argv) {
     config -> serverport = 50002;
     printf("%d\n", config->serverport);
   }
-  //ENDS
+  ENDS*/
 
   signal(SIGINT,catch_ctrlc);
 
@@ -336,3 +309,57 @@ void catch_ctrlc(int sig) {
   terminate_processes();
   exit(0);
 }
+
+// Creates shared memory
+void create_shared_memory() { 
+  shmid = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0777);
+  if (shmid < 0) {
+    perror("Error creating shared memory");
+    exit(1);
+  }
+}
+
+// Attach shared memory
+void attach_shared_memory() {
+  config = (config_struct *) shmat(shmid, NULL, 0);
+  if (config == (void *) - 1) {
+    perror("Error attaching shared memory");
+    exit(1);
+  }
+}
+
+// Delete shared memory
+void delete_shared_memory() {
+  shmdt(config);
+  shmctl(shmid, IPC_RMID, NULL);
+}
+
+// Create necessary processes
+void create_processes() {
+  parent_pid = getppid();
+  config_pid = fork();
+  statistics_pid = fork();
+}
+
+// Terminate child processes
+void terminate_processes() {
+  kill(config_pid, SIGKILL);
+  kill(statistics_pid, SIGKILL);
+}
+
+// Create pool of threads
+void create_thread_pools() {
+  int i;
+  int ids[config -> thread_pool];
+  thread_pool = malloc(sizeof(pthread_t) * config->thread_pool);
+
+  if (thread_pool == NULL) {
+    perror("Error allocating memory for threads\n");
+  }
+
+  /*for (i = 0; i < config->thread_pool; i++) {
+    ids[i] = i;
+    pthread_create(&thread_pool[i], NULL, thread_start_routine, &ids[i]);
+  }*/
+}
+

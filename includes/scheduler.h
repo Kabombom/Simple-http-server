@@ -9,8 +9,8 @@ typedef struct {
   sem_t threads_limit;
 } scheduler_data;
 
-pthread_t *thread_pool;
+//pthread_t *thread_pool;
 
-void delete_scheduler_thread();
-void scheduler_thread_start_routine();
-void create_scheduler_threads();
+//void delete_scheduler_thread();
+//void scheduler_thread_start_routine();
+//void create_scheduler_threads();
