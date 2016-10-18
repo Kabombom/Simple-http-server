@@ -3,11 +3,11 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-struct {
+typedef struct {
   pthread_t *threads;
   pthread_mutex_t mutex;
   sem_t threads_limit;
-} scheduler_data
+} scheduler_data;
 
 pthread_t *thread_pool;
 

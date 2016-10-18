@@ -33,7 +33,22 @@ int main(int argc, char ** argv) {
   socklen_t client_name_len = sizeof(client_name);
   int port;
 
+  create_shared_memory();
+  attach_shared_memory();
   configuration_start();
+
+  //Testing shared mem
+  config_pid = fork();
+  statistics_pid = fork();
+  if (config_pid == 0) {
+    config -> serverport = 50001;
+    printf("%d\n", config->serverport);
+  }
+  if (statistics_pid == 0) {
+    config -> serverport = 50002;
+    printf("%d\n", config->serverport);
+  }
+  //ENDS
 
   signal(SIGINT,catch_ctrlc);
 

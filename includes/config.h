@@ -15,9 +15,4 @@ typedef struct {
 
 config_struct *config;
 
-int shmid;
-int parent_process_id;
-int config_process_id;
-int statistics_process_id;
-
 void configuration_start();

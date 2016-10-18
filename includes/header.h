@@ -42,8 +42,18 @@ void execute_script(int socket);
 void not_found(int socket);
 void catch_ctrlc(int);
 void cannot_execute(int socket);
+void create_shared_memory();
+void attach_shared_memory();
+void delete_shared_memory();
 
 char buf[SIZE_BUF];
 char req_buf[SIZE_BUF];
 char buf_tmp[SIZE_BUF];
 int port, socket_conn, new_conn;
+
+int semid;
+int shmid;
+int parent_pid;
+int config_pid;
+int statistics_pid;
+
