@@ -28,6 +28,11 @@ void delete_shared_memory() {
   shmctl(shmid, IPC_RMID, NULL);
 }
 
+void terminate_processes() {
+  kill(config_pid, SIGKILL);
+  kill(statistics_pid, SIGKILL);
+}
+
 int main(int argc, char ** argv) {
   struct sockaddr_in client_name;
   socklen_t client_name_len = sizeof(client_name);
@@ -85,6 +90,9 @@ int main(int argc, char ** argv) {
       // Search file with html page and send to client
       send_page(new_conn);
     }
+
+    // Terminate child processes
+    terminate_processes();
 
     // Terminate connection with client
     close(new_conn);
@@ -325,5 +333,6 @@ void cannot_execute(int socket) {
 void catch_ctrlc(int sig) {
   printf("Server terminating\n");
   close(socket_conn);
+  terminate_processes();
   exit(0);
 }
