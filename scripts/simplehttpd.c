@@ -339,6 +339,15 @@ void create_processes() {
   parent_pid = getppid();
   config_pid = fork();
   statistics_pid = fork();
+  
+  if (config_pid < 0) {
+    perror("Error creating configuration process\n");
+    exit(1);
+  }
+  if (statistics_pid < 0) {
+    perror("Error creating configuration process\n"); 
+    exit(1);
+  }
 }
 
 // Terminate child processes
