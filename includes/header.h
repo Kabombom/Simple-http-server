@@ -31,7 +31,7 @@
 #define CGI_EXPR	"cgi-bin/"
 #define SIZE_BUF	1024
 
-
+// Initial functions
 int  fireup(int port);
 void identify(int socket);
 void get_request(int socket);
@@ -42,6 +42,11 @@ void execute_script(int socket);
 void not_found(int socket);
 void catch_ctrlc(int);
 void cannot_execute(int socket);
+
+//Processes functions
+terminate_processes();
+
+// Shared memory functions
 void create_shared_memory();
 void attach_shared_memory();
 void delete_shared_memory();
@@ -51,9 +56,14 @@ char req_buf[SIZE_BUF];
 char buf_tmp[SIZE_BUF];
 int port, socket_conn, new_conn;
 
-int semid;
-int shmid;
+// Processes ids
 int parent_pid;
 int config_pid;
 int statistics_pid;
+
+// Shared memory ids
+int shmid;
+
+//Semaphore id
+int semid;
 
