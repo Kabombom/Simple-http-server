@@ -1,11 +1,13 @@
 CC = gcc
 CFLAGS = -Wall -g
-OBJS = scripts/simplehttpd.o scripts/config.o
+OBJS = scripts/simplehttpd.o scripts/config.o scripts/scheduler.o
 PROG = simplehttpd
 PATH_simplehttpd.c = scripts/simplehttpd.c
 PATH_header.h = includes/header.h
 PATH_config.c = scripts/config.c
 PATH_config.h = config.h
+PATH_scheduler.c = scripts/scheduler.c
+PATH_scheduler.h = scripts/scheduler.h
 
 all:			${PROG}
 clean:		rm ${OBJS} *~ ${PROG}
@@ -15,3 +17,4 @@ ${PROG}:	${OBJS}
 
 simplehttpd.o: PATH_simplehttpd.c PATH_header.h
 config.o:  PATH_config.h
+scheduler.o:  PATH_config.h

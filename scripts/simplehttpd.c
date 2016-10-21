@@ -16,8 +16,7 @@ int main(int argc, char ** argv) {
   create_shared_memory();
   attach_shared_memory();
   configuration_start();
-  printf("Test\n");
-  create_thread_pool();
+  create_scheduler_threads();
 
   /*Testing shared mem
   if (config_pid == 0) {
@@ -360,25 +359,5 @@ void create_processes() {
 void terminate_processes() {
   kill(config_pid, SIGKILL);
   kill(statistics_pid, SIGKILL);
-}
-
-void *thread_routine() {
-  printf("This is a thread\n");
-  return NULL;
-}
-
-// Create pool of threads
-void create_thread_pool() {
-  int i;
-  long ids[config -> thread_pool];
-  thread_pool = malloc(sizeof(pthread_t) * config->thread_pool);
-
-  if (thread_pool == NULL) {
-    perror("Error allocating memory for threads\n");
-  }
-  for (i = 0; i < config->thread_pool; i++) {
-    ids[i] = i;
-    pthread_create(&thread_pool[i], NULL, thread_routine, (void *)ids[i]);
-  }
 }
 
