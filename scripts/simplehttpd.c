@@ -16,6 +16,8 @@ int main(int argc, char ** argv) {
   create_shared_memory();
   attach_shared_memory();
   configuration_start();
+  printf("Test\n");
+  create_thread_pool();
 
   /*Testing shared mem
   if (config_pid == 0) {
@@ -30,7 +32,6 @@ int main(int argc, char ** argv) {
 
   signal(SIGINT,catch_ctrlc);
 
-  // If no argument is given, load from config.txt
   port = config -> serverport;
   printf("Listening for HTTP requests on port %d\n", port);
 
@@ -66,6 +67,9 @@ int main(int argc, char ** argv) {
 
     // Terminate child processes
     terminate_processes();
+
+    //Clean shared mem
+    delete_shared_memory();
 
     // Terminate connection with client
     close(new_conn);
@@ -307,6 +311,7 @@ void catch_ctrlc(int sig) {
   printf("Server terminating\n");
   close(socket_conn);
   terminate_processes();
+  delete_shared_memory();
   exit(0);
 }
 
@@ -330,6 +335,7 @@ void attach_shared_memory() {
 
 // Delete shared memory
 void delete_shared_memory() {
+  printf("Cleaning shared memory\n");
   shmdt(config);
   shmctl(shmid, IPC_RMID, NULL);
 }
@@ -356,19 +362,23 @@ void terminate_processes() {
   kill(statistics_pid, SIGKILL);
 }
 
+void *thread_routine() {
+  printf("This is a thread\n");
+  return NULL;
+}
+
 // Create pool of threads
-void create_thread_pools() {
+void create_thread_pool() {
   int i;
-  int ids[config -> thread_pool];
+  long ids[config -> thread_pool];
   thread_pool = malloc(sizeof(pthread_t) * config->thread_pool);
 
   if (thread_pool == NULL) {
     perror("Error allocating memory for threads\n");
   }
-
-  /*for (i = 0; i < config->thread_pool; i++) {
+  for (i = 0; i < config->thread_pool; i++) {
     ids[i] = i;
-    pthread_create(&thread_pool[i], NULL, thread_start_routine, &ids[i]);
-  }*/
+    pthread_create(&thread_pool[i], NULL, thread_routine, (void *)ids[i]);
+  }
 }
 

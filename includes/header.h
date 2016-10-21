@@ -54,6 +54,9 @@ void attach_shared_memory();
 void delete_shared_memory();
 
 // Threads functions
+void *thread_routine();
+void create_thread_pool();
+
 char buf[SIZE_BUF];
 char req_buf[SIZE_BUF];
 char buf_tmp[SIZE_BUF];
