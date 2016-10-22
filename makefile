@@ -17,4 +17,4 @@ ${PROG}:	${OBJS}
 
 simplehttpd.o: PATH_simplehttpd.c PATH_header.h
 config.o:  PATH_config.h
-scheduler.o:  PATH_config.h
+scheduler.o:  PATH_scheduler.h
