@@ -45,6 +45,7 @@ void catch_ctrlc(int);
 void cannot_execute(int socket);
 
 //Processes functions
+void statistics();
 void create_processes();
 void terminate_processes();
 

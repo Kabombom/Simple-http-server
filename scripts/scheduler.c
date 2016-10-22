@@ -12,6 +12,7 @@ void *scheduler_thread_routine() {
   return NULL;
 }
 
+
 // Create pool of threads
 void create_scheduler_threads() {
   int i;

@@ -18,6 +18,7 @@ int main(int argc, char ** argv) {
   configuration_start();
   create_scheduler_threads();
 
+
   /*Testing shared mem
   if (config_pid == 0) {
     config -> serverport = 50001;
@@ -28,6 +29,7 @@ int main(int argc, char ** argv) {
     printf("%d\n", config->serverport);
   }
   ENDS*/
+
 
   signal(SIGINT,catch_ctrlc);
 
@@ -339,42 +341,25 @@ void delete_shared_memory() {
   shmctl(shmid, IPC_RMID, NULL);
 }
 
-void config_function() {
-  printf("COnfiguration process %d\n", config_pid);
-}
-
 void statistics() {
-  printf("Statistics process %d\n", statistics_pid);
+  printf("Statistics process %d and parent %d\n", statistics_pid, getppid());
 }
 
 // Create necessary processes
 void create_processes() {
   parent_pid = getpid();
 
-  config_pid = fork();
-  if (config_pid < 0) {
-    perror("Error creating configuration process\n");
+  if ((statistics_pid = fork()) == 0) {
+    statistics();
+    exit(0);
+  } else if (statistics_pid == -1){
+    perror("Error creating statistics process\n");
     exit(1);
-  } else {
-    config_function();
-  }
-  
-  if (getpid() == parent_pid) {
-
-    statistics_pid = fork();
-    if (statistics_pid < 0) {
-      perror("Error creating stats process\n"); 
-      exit(1);
-    } else {
-      parent_pid = getppid();
-      statistics();
-    }
   }
 }
 
 // Terminate child processes
 void terminate_processes() {
-  kill(config_pid, SIGKILL);
   kill(statistics_pid, SIGKILL);
 }
 
