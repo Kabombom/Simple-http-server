@@ -1,7 +1,8 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
-#include <semaphore.h>
+#include <unistd.h>
+#include <time.h>
 
 typedef struct {
   pthread_t *threads;
