@@ -341,6 +341,7 @@ void delete_shared_memory() {
   shmctl(shmid, IPC_RMID, NULL);
 }
 
+// Statistics process  function
 void statistics() {
   printf("Statistics process %d and parent %d\n", statistics_pid, getppid());
 }
