@@ -339,19 +339,36 @@ void delete_shared_memory() {
   shmctl(shmid, IPC_RMID, NULL);
 }
 
+void config_function() {
+  printf("COnfiguration process %d\n", config_pid);
+}
+
+void statistics() {
+  printf("Statistics process %d\n", statistics_pid);
+}
+
 // Create necessary processes
 void create_processes() {
-  parent_pid = getppid();
+  parent_pid = getpid();
+
   config_pid = fork();
-  statistics_pid = fork();
-  
   if (config_pid < 0) {
     perror("Error creating configuration process\n");
     exit(1);
+  } else {
+    config_function();
   }
-  if (statistics_pid < 0) {
-    perror("Error creating configuration process\n"); 
-    exit(1);
+  
+  if (getpid() == parent_pid) {
+
+    statistics_pid = fork();
+    if (statistics_pid < 0) {
+      perror("Error creating stats process\n"); 
+      exit(1);
+    } else {
+      parent_pid = getppid();
+      statistics();
+    }
   }
 }
 
