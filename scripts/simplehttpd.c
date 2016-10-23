@@ -18,12 +18,7 @@ int main(int argc, char ** argv) {
   configuration_start();
   create_scheduler_threads();
 
-<<<<<<< HEAD
   /* Testing shared mem
-=======
-
-  /*Testing shared mem
->>>>>>> e3af357148b2906230e3861d4ccdcedd61462ef0
   if (config_pid == 0) {
     config -> serverport = 50001;
     printf("%d\n", config->serverport);
