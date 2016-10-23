@@ -18,7 +18,7 @@ int main(int argc, char ** argv) {
   configuration_start();
   create_scheduler_threads();
 
-  /*Testing shared mem
+  /* Testing shared mem
   if (config_pid == 0) {
     config -> serverport = 50001;
     printf("%d\n", config->serverport);
@@ -27,7 +27,7 @@ int main(int argc, char ** argv) {
     config -> serverport = 50002;
     printf("%d\n", config->serverport);
   }
-  ENDS*/
+  ENDS */
 
   signal(SIGINT,catch_ctrlc);
 
@@ -35,7 +35,7 @@ int main(int argc, char ** argv) {
   printf("Listening for HTTP requests on port %d\n", port);
 
   // Configure listening port
-  // #If port given is invalid, exit
+  // If port given is invalid, exit
   if ((socket_conn = fireup(port)) == -1) {
     exit(1);
   }
@@ -43,7 +43,7 @@ int main(int argc, char ** argv) {
   // Serve requests
   while (1) {
     // Accept connection on socket
-    // #Exit if error occurs while connecting
+    // Exit if error occurs while connecting
     if ( (new_conn = accept(socket_conn, (struct sockaddr *)&client_name, &client_name_len)) == -1 ) {
       printf("Error accepting connection\n");
       exit(1);
@@ -157,7 +157,6 @@ void send_page(int socket) {
   }
   else {
     // Page found, send to client
-
     // First send HTTP header back to client
     send_header(socket);
 
@@ -187,8 +186,8 @@ void identify(int socket) {
   getpeername(socket, (struct sockaddr*)&addr, &len);
 
   // Assuming only IPv4
-  //ntohs converts 16bits quantities between network byte order and host byte order.
-  //inet_ntop converts an address *src  from network_format to presentation format
+  // ntohs converts 16bits quantities between network byte order and host byte order.
+  // inet_ntop converts an address *src  from network_format to presentation format
   s = (struct sockaddr_in *)&addr;
   port = ntohs(s -> sin_port);
   inet_ntop(AF_INET, &s -> sin_addr, ipstr, sizeof ipstr);
@@ -315,10 +314,10 @@ void catch_ctrlc(int sig) {
 }
 
 // Creates shared memory
-void create_shared_memory() { 
+void create_shared_memory() {
   shmid = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0777);
   if (shmid < 0) {
-    perror("Error creating shared memory");
+    perror("Error creating shared memory.");
     exit(1);
   }
 }
@@ -327,20 +326,20 @@ void create_shared_memory() {
 void attach_shared_memory() {
   config = (config_struct *) shmat(shmid, NULL, 0);
   if (config == (void *) - 1) {
-    perror("Error attaching shared memory");
+    perror("Error attaching shared memory.");
     exit(1);
   }
 }
 
 // Delete shared memory
 void delete_shared_memory() {
-  printf("Cleaning shared memory\n");
+  printf("Cleaning shared memory.\n");
   shmdt(config);
   shmctl(shmid, IPC_RMID, NULL);
 }
 
 void config_function() {
-  printf("COnfiguration process %d\n", config_pid);
+  printf("Configuration process %d\n", config_pid);
 }
 
 void statistics() {
@@ -353,17 +352,17 @@ void create_processes() {
 
   config_pid = fork();
   if (config_pid < 0) {
-    perror("Error creating configuration process\n");
+    perror("Error creating configuration process.\n");
     exit(1);
   } else {
     config_function();
   }
-  
+
   if (getpid() == parent_pid) {
 
     statistics_pid = fork();
     if (statistics_pid < 0) {
-      perror("Error creating stats process\n"); 
+      perror("Error creating stats process.\n");
       exit(1);
     } else {
       parent_pid = getppid();
@@ -377,4 +376,3 @@ void terminate_processes() {
   kill(config_pid, SIGKILL);
   kill(statistics_pid, SIGKILL);
 }
-
