@@ -2,7 +2,7 @@
 
 // Create Request Buffer
 void create_buffer() {
-  requests_buffer = (buffer *) malloc(sizeof(Buffer));
+  requests_buffer = (Buffer *) malloc(sizeof(Buffer));
   requests_buffer -> request = NULL;
 }
 
@@ -22,9 +22,9 @@ void delete_buffer() {
   free(requests_buffer);
 }
 
-void add_request_to_buffer(Buffer *new_request) {
+void add_request_to_buffer(Request *new_request) {
   if (requests_buffer->request == NULL) {
-    requests_buffer->request = request;
+    requests_buffer->request = new_request;
     return;
   }
 
@@ -32,7 +32,6 @@ void add_request_to_buffer(Buffer *new_request) {
   while(aux -> next != NULL)
     aux = aux -> next;
 
-  aux -> next = new_request; 
+  aux -> next = new_request;
   new_request -> previous = aux;
 }
-
