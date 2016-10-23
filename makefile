@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -pthread -Wall -g
 OBJS = scripts/simplehttpd.o scripts/config.o scripts/scheduler.o
 PROG = simplehttpd
 PATH_simplehttpd.c = scripts/simplehttpd.c
