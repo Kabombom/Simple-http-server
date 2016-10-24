@@ -1,9 +1,11 @@
 #include "../includes/buffer.h"
 
 // Create Request Buffer
-void create_buffer() {
+void create_buffer(int size) {
   requests_buffer = (Buffer *) malloc(sizeof(Buffer));
   requests_buffer -> request = NULL;
+  requests_buffer -> size = size;
+  requests_buffer -> current_size = 0;
   printf("Buffer created\n");
 }
 
@@ -26,7 +28,7 @@ void delete_buffer() {
 
 // Add request to buffer
 void add_request_to_buffer(Request *new_request) {
-  printf("Adding a request to buffer\n");
+  printf("Adding request to buffer: %s\n", new_request->required_file);
   if (requests_buffer->request == NULL) {
     requests_buffer->request = new_request;
     return;
@@ -34,9 +36,10 @@ void add_request_to_buffer(Request *new_request) {
   Request *aux = requests_buffer->request;
   while(aux -> next != NULL)
     aux = aux -> next;
-
   aux -> next = new_request;
   new_request -> prev = aux;
+  requests_buffer->current_size++;
+  printf("Current size of buffer: %d\n", requests_buffer->current_size );
 }
 
 void print_buffer() {

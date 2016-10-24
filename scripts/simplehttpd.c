@@ -30,8 +30,7 @@ int main(int argc, char ** argv) {
   ENDS */
 
   // Create Buffer
-  create_buffer();
-
+  create_buffer(4);
   signal(SIGINT,catch_ctrlc);
 
   port = config -> serverport;
@@ -68,15 +67,16 @@ int main(int argc, char ** argv) {
       send_page(new_conn);
     }
 
-    /*
-    if () { // TO DO -> check if there is space in the buffer
-      printf("No buffer space available.\n");
-    } */
-
-    // Add request to buffer
-    Request *req = (Request*) malloc(sizeof(Request));
-    req->required_file = req_buf;
-    add_request_to_buffer(req);
+    // Add request to buffer if there's space in buffer
+    if (requests_buffer->current_size == requests_buffer->size) {
+      perror("No buffer space available.\n");
+      exit(0);
+    }
+    else {
+      Request *req = (Request*) malloc(sizeof(Request));
+      req->required_file = req_buf;
+      add_request_to_buffer(req);
+    }
 
     // Terminate child processes
     terminate_processes();
@@ -325,6 +325,7 @@ void catch_ctrlc(int sig) {
   terminate_processes();
   delete_shared_memory();
   print_buffer();
+  delete_buffer();
   exit(0);
 }
 
