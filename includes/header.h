@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <sys/types.h> 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -19,11 +19,12 @@
 // Project header files
 #include "config.h"
 #include "scheduler.h"
+#include "buffer.h"
 
 // Produce debug information
-#define DEBUG	  	1	
+#define DEBUG	  	1
 
-// Header of HTTP reply to client 
+// Header of HTTP reply to client
 #define	SERVER_STRING 	"Server: simpleserver/0.1.0\r\n"
 #define HEADER_1	"HTTP/1.0 200 OK\r\n"
 #define HEADER_2	"Content-Type: text/html\r\n\r\n"
@@ -69,4 +70,3 @@ int shmid;
 
 //Semaphore id
 int semid;
-

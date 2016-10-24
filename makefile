@@ -1,13 +1,15 @@
 CC = gcc
 CFLAGS = -pthread -Wall -g
-OBJS = scripts/simplehttpd.o scripts/config.o scripts/scheduler.o
+OBJS = scripts/simplehttpd.o scripts/config.o scripts/scheduler.o scripts/buffer.o
 PROG = simplehttpd
 PATH_simplehttpd.c = scripts/simplehttpd.c
 PATH_header.h = includes/header.h
 PATH_config.c = scripts/config.c
-PATH_config.h = config.h
+PATH_config.h = includes/config.h
 PATH_scheduler.c = scripts/scheduler.c
-PATH_scheduler.h = scripts/scheduler.h
+PATH_scheduler.h = includes/scheduler.h
+PATH_buffer.c = scripts/buffer.c
+PATH_buffer.h = includes/buffer.h
 
 all:			${PROG}
 clean:		rm ${OBJS} *~ ${PROG}
@@ -18,3 +20,4 @@ ${PROG}:	${OBJS}
 simplehttpd.o: PATH_simplehttpd.c PATH_header.h
 config.o:  PATH_config.h
 scheduler.o:  PATH_scheduler.h
+buffer.o : PATH_buffer.h

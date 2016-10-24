@@ -29,6 +29,8 @@ int main(int argc, char ** argv) {
   }
   ENDS */
 
+  // Create Buffer
+  create_buffer();
 
   signal(SIGINT,catch_ctrlc);
 
@@ -60,10 +62,19 @@ int main(int argc, char ** argv) {
     if(!strncmp(req_buf, CGI_EXPR, strlen(CGI_EXPR))) {
       execute_script(new_conn);
     }
+
     else {
       // Search file with html page and send to client
       send_page(new_conn);
     }
+
+    /*
+    if () { // TO DO -> check if there is space in the buffer
+      printf("No buffer space available.\n");
+    } */
+
+    // Add request to buffer
+    add_request_to_buffer(req_buf);
 
     // Terminate child processes
     terminate_processes();
