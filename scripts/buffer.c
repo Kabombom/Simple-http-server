@@ -9,19 +9,21 @@ void create_buffer() {
 // Delete Request Buffer
 void delete_buffer() {
   Request *tmp;
+  Request *aux = requests_buffer->request;
 
-  while(requests_buffer->next != NULL) {
-    tmp = requests_buffer->request;
-    requests_buffer->request = requests_buffer->request->next;
-    free(tmp->required_files);
+  while(aux != NULL) {
+    tmp = aux;
+    aux = aux->next;
+    free(tmp->required_file);
     free(tmp);
   }
 
-  free(requests_buffer->request->required_files);
-  free(requests_buffer->request);
+  free(aux->required_file);
+  free(aux);
   free(requests_buffer);
 }
 
+// Add request to buffer
 void add_request_to_buffer(Request *new_request) {
   if (requests_buffer->request == NULL) {
     requests_buffer->request = new_request;
@@ -33,5 +35,5 @@ void add_request_to_buffer(Request *new_request) {
     aux = aux -> next;
 
   aux -> next = new_request;
-  new_request -> previous = aux;
+  new_request -> prev = aux;
 }

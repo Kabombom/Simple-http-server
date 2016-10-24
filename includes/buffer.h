@@ -15,17 +15,17 @@
 #include <string.h>
 #include <signal.h>
 
-typedef struct {
+typedef struct request {
   int ready;
   int conn;
   char *required_file;
   time_t get_request_time;
 	time_t serve_request_time;
-  struct Node *previous;
-  struct Node *next;
+  struct request *prev;
+  struct request *next;
 } Request;
 
-typedef struct {
+typedef struct buffer {
   Request *request;
 } Buffer;
 
