@@ -74,7 +74,9 @@ int main(int argc, char ** argv) {
     } */
 
     // Add request to buffer
-    add_request_to_buffer(req_buf);
+    Request *req = (Request*) malloc(sizeof(Request));
+    req->required_file = req_buf;
+    add_request_to_buffer(req);
 
     // Terminate child processes
     terminate_processes();
@@ -318,10 +320,11 @@ void cannot_execute(int socket) {
 
 // Closes socket before closing
 void catch_ctrlc(int sig) {
-  printf("Server terminating\n");
+  printf(" Server terminating\n");
   close(socket_conn);
   terminate_processes();
   delete_shared_memory();
+  print_buffer();
   exit(0);
 }
 
