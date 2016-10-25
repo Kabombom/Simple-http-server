@@ -78,15 +78,18 @@ int main(int argc, char ** argv) {
       add_request_to_buffer(req);
     }
 
-    // Terminate child processes
-    terminate_processes();
-
-    //Clean shared mem
-    delete_shared_memory();
-
     // Terminate connection with client
     close(new_conn);
   }
+
+  // Terminate child processes
+  terminate_processes();
+
+  //Clean shared mem
+  delete_shared_memory();
+
+  //Clean buffer
+  delete_buffer();
 }
 
 // Processes request from client
