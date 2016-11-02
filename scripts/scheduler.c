@@ -35,6 +35,7 @@ void create_scheduler_threads() {
 // Delete threads
 void delete_scheduler_threads() {
   printf("Cleaning up scheduler...\n");
+  int i;
   for (i = 0; i < config->thread_pool; i++) {
     pthread_join(thread_pool[i], NULL);
   }

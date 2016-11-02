@@ -17,14 +17,12 @@ void delete_buffer() {
   while(aux != NULL) {
     tmp = aux;
     aux = aux->next;
-    free(tmp->required_file);
-    //free(tmp);
+    //free(tmp->required_file);
+    free(tmp);
   }
-  /*
-  free(aux->required_file);
+  //free(aux->required_file);
   free(aux);
   free(requests_buffer);
-  */
 }
 
 // Add request to buffer

@@ -70,25 +70,33 @@ int main(int argc, char ** argv) {
     // Add request to buffer if there's space in buffer
     if (requests_buffer->current_size == requests_buffer->size) {
       perror("No buffer space available.\n");
-      exit(0);
+
+      // Terminate child processes
+      terminate_processes();
+      // Clean shared mem
+      delete_shared_memory();
+      // Print buffer
+      print_buffer();
+      // Clean buffer
+      delete_buffer();
+      exit(1);
     }
     else {
       Request *req = (Request*) malloc(sizeof(Request));
       req->required_file = req_buf;
       add_request_to_buffer(req);
     }
-
     // Terminate connection with client
     close(new_conn);
   }
 
   // Terminate child processes
   terminate_processes();
-
-  //Clean shared mem
+  // Clean shared mem
   delete_shared_memory();
-
-  //Clean buffer
+  // Print buffer
+  print_buffer();
+  // Clean buffer
   delete_buffer();
 }
 
