@@ -31,7 +31,7 @@ int main(int argc, char ** argv) {
 
   // Create Buffer
   create_buffer(4);
-  signal(SIGINT, catch_ctrlc);
+  signal(SIGINT,catch_ctrlc);
 
   port = config -> serverport;
   printf("Listening for HTTP requests on port %d\n", port);
@@ -332,6 +332,7 @@ void catch_ctrlc(int sig) {
   exit(0);
 }
 
+
 // Creates shared memory
 void create_shared_memory() {
   shmid = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0777);
@@ -341,6 +342,7 @@ void create_shared_memory() {
   }
 }
 
+
 // Attach shared memory
 void attach_shared_memory() {
   config = (config_struct *) shmat(shmid, NULL, 0);
@@ -349,6 +351,7 @@ void attach_shared_memory() {
     exit(1);
   }
 }
+
 
 // Delete shared memory
 void delete_shared_memory() {
@@ -363,6 +366,7 @@ void statistics() {
   printf("Statistics process %d and parent %d\n", statistics_pid, getppid());
 }
 
+
 // Create necessary processes
 void create_processes() {
   parent_pid = getpid();
@@ -375,6 +379,7 @@ void create_processes() {
     exit(1);
   }
 }
+
 
 // Terminate child processes
 void terminate_processes() {

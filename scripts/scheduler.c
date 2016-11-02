@@ -12,7 +12,7 @@ void create_scheduler_threads() {
   int i;
   long ids[config -> thread_pool];
   // Create pool of threads
-  thread_pool = malloc(sizeof(pthread_t) * config->thread_pool); // tem que ser mesmo malloc?
+  thread_pool = malloc(sizeof(pthread_t) * config->thread_pool);
 
   if (thread_pool == NULL) {
     perror("Error allocating memory for threads\n");
