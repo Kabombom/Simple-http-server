@@ -36,3 +36,10 @@ void create_scheduler_threads() {
     pthread_join(thread_pool[i], NULL);
   }
 }
+
+// Delete threads
+void delete_scheduler_threads() {
+  for (i = 0; i < config->thread_pool; i++) {
+    pthread_join(thread_pool[i], NULL);
+  }
+}

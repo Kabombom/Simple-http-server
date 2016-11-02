@@ -31,7 +31,7 @@ int main(int argc, char ** argv) {
 
   // Create Buffer
   create_buffer(4);
-  signal(SIGINT,catch_ctrlc);
+  signal(SIGINT, catch_ctrlc);
 
   port = config -> serverport;
   printf("Listening for HTTP requests on port %d\n", port);
