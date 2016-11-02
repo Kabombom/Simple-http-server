@@ -1,11 +1,6 @@
 #include "../includes/scheduler.h"
 #include "../includes/config.h"
 
-void delete_scheduler_thread() {
- printf("Cleaning up scheduler...\n");
- pthread_exit(0);
-}
-
 // Threads routine
 void *scheduler_thread_routine() {
   printf("This is a thread.\n");
@@ -39,6 +34,7 @@ void create_scheduler_threads() {
 
 // Delete threads
 void delete_scheduler_threads() {
+  printf("Cleaning up scheduler...\n");
   for (i = 0; i < config->thread_pool; i++) {
     pthread_join(thread_pool[i], NULL);
   }
