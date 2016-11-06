@@ -30,8 +30,8 @@ int main(int argc, char ** argv) {
   ENDS */
 
   // Create Buffer
-  create_buffer(4);
-  signal(SIGINT,catch_ctrlc);
+  create_buffer(10);
+  signal(SIGINT, catch_ctrlc);
 
   port = config -> serverport;
   printf("Listening for HTTP requests on port %d\n", port);
@@ -340,6 +340,14 @@ void catch_ctrlc(int sig) {
   exit(0);
 }
 
+// Create semaphores
+void create_semaphores(number_of_sems) {
+  semid = sem_get(number_of_sems, 1); // Creates a new array of semaphores with init_val = 1
+  if (semid == -1) {
+    perror("Failed to create semaphores");
+    exit(1);
+  }
+}
 
 // Creates shared memory
 void create_shared_memory() {
@@ -371,7 +379,7 @@ void delete_shared_memory() {
 
 // Statistics process  function
 void statistics() {
-  printf("Statistics process %d and parent %d\n", statistics_pid, getppid());
+  printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
 }
 
 
@@ -380,6 +388,7 @@ void create_processes() {
   parent_pid = getpid();
 
   if ((statistics_pid = fork()) == 0) {
+    statistics_pid = getpid();
     statistics();
     exit(0);
   } else if (statistics_pid == -1){
@@ -391,5 +400,6 @@ void create_processes() {
 
 // Terminate child processes
 void terminate_processes() {
+  printf("Terminating processes...\n");
   kill(statistics_pid, SIGKILL);
 }

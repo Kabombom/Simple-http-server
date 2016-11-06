@@ -68,5 +68,5 @@ int statistics_pid;
 // Shared memory ids
 int shmid;
 
-//Semaphore id
+//Semaphores id
 int semid;
