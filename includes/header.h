@@ -17,6 +17,7 @@
 #include <pthread.h>
 
 // Project header files
+#include "semlib.h"
 #include "config.h"
 #include "scheduler.h"
 #include "buffer.h"

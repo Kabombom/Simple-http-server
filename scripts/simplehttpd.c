@@ -349,6 +349,11 @@ void create_semaphores(number_of_sems) {
   }
 }
 
+// Delete semaphores
+void delete_semaphores() {
+  sem_close(semid);
+}
+
 // Creates shared memory
 void create_shared_memory() {
   shmid = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0777);
@@ -357,7 +362,6 @@ void create_shared_memory() {
     exit(1);
   }
 }
-
 
 // Attach shared memory
 void attach_shared_memory() {
@@ -389,6 +393,7 @@ void create_processes() {
 
   if ((statistics_pid = fork()) == 0) {
     statistics_pid = getpid();
+    printf("%d\n", statistics_pid);
     statistics();
     exit(0);
   } else if (statistics_pid == -1){
