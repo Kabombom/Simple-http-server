@@ -33,6 +33,7 @@
 #define GET_EXPR	"GET /"
 #define CGI_EXPR	"cgi-bin/"
 #define SIZE_BUF	1024
+#define BUFFER_SIZE 10 // Maximum number of requests in buffer
 
 // Initial functions
 int  fireup(int port);

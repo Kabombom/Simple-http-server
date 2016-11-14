@@ -26,7 +26,6 @@ typedef struct request {
 } Request;
 
 typedef struct buffer {
-  int size;
   int current_size;
   Request *request;
 } Buffer;

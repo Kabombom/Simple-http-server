@@ -30,7 +30,7 @@ int main(int argc, char ** argv) {
   ENDS */
 
   // Create Buffer
-  create_buffer(10);
+  create_buffer();
   signal(SIGINT, catch_ctrlc);
 
   port = config -> serverport;
@@ -68,7 +68,7 @@ int main(int argc, char ** argv) {
     }
 
     // Add request to buffer if there's space in buffer
-    if (requests_buffer->current_size == requests_buffer->size) {
+    if (requests_buffer->current_size == BUFFER_SIZE) {
       perror("No buffer space available.\n");
 
       // Terminate child processes

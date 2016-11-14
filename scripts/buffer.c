@@ -1,10 +1,9 @@
 #include "../includes/buffer.h"
 
 // Create Request Buffer
-void create_buffer(int size) {
+void create_buffer() {
   requests_buffer = (Buffer *) malloc(sizeof(Buffer));
   requests_buffer -> request = NULL;
-  requests_buffer -> size = size;
   requests_buffer -> current_size = 0;
   printf("Buffer created\n");
 }
