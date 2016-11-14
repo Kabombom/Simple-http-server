@@ -11,7 +11,7 @@ void create_buffer() {
 // Delete Request Buffer
 void delete_buffer() {
   Request *tmp;
-  Request *aux = requests_buffer->request;
+  Request *aux = requests_buffer -> request;
 
   while(aux != NULL) {
     tmp = aux;
@@ -26,18 +26,36 @@ void delete_buffer() {
 
 // Add request to buffer
 void add_request_to_buffer(Request *new_request) {
-  printf("Adding request to buffer: %s\n", new_request->required_file);
+  printf("Adding request to buffer: %s\n", new_request -> required_file);
   if (requests_buffer->request == NULL) {
     requests_buffer->request = new_request;
     return;
   }
   Request *aux = requests_buffer->request;
   while(aux -> next != NULL)
-    aux = aux -> next;
-  aux -> next = new_request;
-  new_request -> prev = aux;
+    aux = aux->next;
+  aux->next = new_request;
+  new_request->prev = aux;
   requests_buffer->current_size++;
   printf("Current size of buffer: %d\n", requests_buffer->current_size );
+}
+
+// Remove requestr from buffer - FIFO
+void remove_request_from_buffer() {
+  Request *aux = requests_buffer->request;
+  Request *aux_n;
+  if (aux != NULL) {
+    printf("Removing oldest request from buffer: %s\n", aux->required_file);
+    while (aux->next != NULL ) {
+      aux_n = aux;
+      aux = aux->next;
+    }
+    free(aux_n->next);
+    aux_n->next = NULL;
+  }
+  else {
+    perror("There are no requests in the buffer.");
+  }
 }
 
 void print_buffer() {
@@ -45,6 +63,7 @@ void print_buffer() {
   int counter = 1;
   while (aux != NULL) {
     printf("Request number %d: %s\n", counter, aux -> required_file);
+    printf("time %d: %ld\n", counter, aux -> get_request_time);
     aux = aux -> next;
     counter++;
   }

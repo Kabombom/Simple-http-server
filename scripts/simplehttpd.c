@@ -1,9 +1,7 @@
 /*
- * -- simplehttpd.c --
- * A (very) simple HTTP server
- *
- * Sistemas Operativos 2016/2017
- */
+* A (very) simple HTTP server
+* Sistemas Operativos 2016/2017
+*/
 
 #include "../includes/header.h"
 
@@ -67,7 +65,14 @@ int main(int argc, char ** argv) {
       send_page(new_conn);
     }
 
-    // Add request to buffer if there's space in buffer
+    /*
+    // Testing removing last request
+    if (requests_buffer->current_size == 1) {
+      remove_request_from_buffer();
+      exit(1);
+    } */
+
+    // Add request to buffer if there is space in buffer
     if (requests_buffer->current_size == BUFFER_SIZE) {
       perror("No buffer space available.\n");
 
@@ -84,6 +89,7 @@ int main(int argc, char ** argv) {
     else {
       Request *req = (Request*) malloc(sizeof(Request));
       req->required_file = req_buf;
+      req->get_request_time = time(NULL);
       add_request_to_buffer(req);
     }
     // Terminate connection with client
