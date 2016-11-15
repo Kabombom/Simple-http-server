@@ -61,7 +61,6 @@ int main(int argc, char ** argv) {
     if(!strncmp(req_buf, CGI_EXPR, strlen(CGI_EXPR))) {
       execute_script(new_conn);
     }
-
     else {
       // Search file with html page and send to client
       send_page(new_conn);
@@ -157,8 +156,14 @@ void send_header(int socket) {
 
 // Execute script in /cgi-bin
 void execute_script(int socket) {
-  // Currently unsupported, return error code to client
-  cannot_execute(socket);
+  char command[200] = "gzip -d ";
+  int run_unzip;
+
+  sprintf(buf_tmp, "htdocs/%s", req_buf);
+  strcat(command, buf_tmp);
+  system(command);
+  printf("requested %s\n", buf_tmp);
+  //cannot_execute(socket);
   return;
 }
 

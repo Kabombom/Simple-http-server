@@ -1,6 +1,10 @@
 #include "../includes/scheduler.h"
 #include "../includes/config.h"
 
+void terminate_thread() {
+  pthread_exit(0);
+}
+
 // Threads routine
 void *scheduler_thread_routine() {
   printf("This is a thread.\n");
