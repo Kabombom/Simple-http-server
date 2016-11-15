@@ -15,6 +15,7 @@
 #include <string.h>
 #include <signal.h>
 #include <pthread.h>
+#include <time.h>
 
 // Project header files
 #include "semlib.h"
