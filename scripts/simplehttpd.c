@@ -15,6 +15,10 @@ int main(int argc, char ** argv) {
   attach_shared_memory();
   configuration_start();
   create_scheduler_threads();
+  start_pipe();
+  /*
+  read_from_pipe();
+  write_in_pipe();*/
 
   /* Testing shared mem
   if (config_pid == 0) {
@@ -163,13 +167,13 @@ void send_header(int socket) {
 // Execute script in /cgi-bin
 void execute_script(int socket) {
   char command[200] = "gzip -d ";
-  int run_unzip;
+  // int run_unzip;
 
   sprintf(buf_tmp, "htdocs/%s", req_buf);
   strcat(command, buf_tmp);
   system(command);
   printf("requested %s\n", buf_tmp);
-  //cannot_execute(socket);
+  // cannot_execute(socket);
   return;
 }
 
