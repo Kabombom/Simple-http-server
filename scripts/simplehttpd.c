@@ -16,9 +16,7 @@ int main(int argc, char ** argv) {
   configuration_start();
   create_scheduler_threads();
   start_pipe();
-  /*
   read_from_pipe();
-  write_in_pipe();*/
 
   /* Testing shared mem
   if (config_pid == 0) {
@@ -165,12 +163,12 @@ void send_header(int socket) {
   return;
 }
 
-char *get_filename(char *file_path) { 
+char *get_filename(char *file_path) {
   int i;
   int passed_dot = 0;
   char *filename = (char *) malloc(100*sizeof(char));
 
-  for (i = 0; i < strlen(file_path); i++) { 
+  for (i = 0; i < strlen(file_path); i++) {
     if (file_path[i] == 46 && passed_dot == 0) {
       passed_dot++;
     } else if (file_path[i] == 46 && passed_dot > 0) {
@@ -190,7 +188,7 @@ void execute_script(int socket) {
 
   sprintf(buf_tmp, "htdocs/%s", req_buf);
   strcat(command, buf_tmp);
-  
+
   // Verifies if file exists
   if((fp = fopen(buf_tmp, "rt")) == NULL) {
     // Page not found, send error to client
@@ -470,6 +468,7 @@ void terminate_processes() {
 }
 
 void start_pipe() {
+  printf("----STARTING PIPE----\n");
   // Creates the named pipe if it doesn't exist yet
   if (mkfifo(PIPE_NAME, O_CREAT|O_EXCL|0600)<0 && (errno != EEXIST)) {
     perror("Cannot create pipe: ");
@@ -479,6 +478,7 @@ void start_pipe() {
 }
 
 void read_from_pipe() {
+  printf("----READING PIPE----\n");
   // Opens the pipe for reading
   int fd;
   if ((fd = open(PIPE_NAME, O_RDONLY)) < 0) {
@@ -486,10 +486,10 @@ void read_from_pipe() {
       exit(0);
   }
 
-  // Do some work
-  numbers n;
+  config_struct_aux config_aux;
   while (1) {
-    read(fd, &n, sizeof(numbers));
-    printf("[SERVER] Received (%d,%d), adding it: %d\n", n.a, n.b, n.a+n.b);
+    read(fd, &config_aux, sizeof(config_struct_aux));
+    printf("[SERVER] Received (%d)\n", config_aux.option);
+    printf("[SERVER] Received (%s)\n", config_aux.change);
   }
 }

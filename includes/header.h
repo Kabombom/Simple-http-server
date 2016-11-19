@@ -38,7 +38,6 @@
 #define BUFFER_SIZE 10 // Maximum number of requests in buffer
 
 // Pipe variables
-#define READ_SIZE 200
 #define PIPE_NAME "named_pipe"
 
 // Initial functions
@@ -62,6 +61,9 @@ void terminate_processes();
 void create_shared_memory();
 void attach_shared_memory();
 void delete_shared_memory();
+
+void start_pipe();
+void read_from_pipe();
 
 char buf[SIZE_BUF];
 char req_buf[SIZE_BUF];
