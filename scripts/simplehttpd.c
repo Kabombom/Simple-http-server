@@ -468,3 +468,28 @@ void terminate_processes() {
   printf("Terminating processes...\n");
   kill(statistics_pid, SIGKILL);
 }
+
+void start_pipe() {
+  // Creates the named pipe if it doesn't exist yet
+  if (mkfifo(PIPE_NAME, O_CREAT|O_EXCL|0600)<0 && (errno != EEXIST)) {
+    perror("Cannot create pipe: ");
+    exit(0);
+  }
+  printf("Named pipe created.\n");
+}
+
+void read_from_pipe() {
+  // Opens the pipe for reading
+  int fd;
+  if ((fd = open(PIPE_NAME, O_RDONLY)) < 0) {
+      perror("Cannot open pipe for reading: ");
+      exit(0);
+  }
+
+  // Do some work
+  numbers n;
+  while (1) {
+    read(fd, &n, sizeof(numbers));
+    printf("[SERVER] Received (%d,%d), adding it: %d\n", n.a, n.b, n.a+n.b);
+  }
+}

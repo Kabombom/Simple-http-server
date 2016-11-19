@@ -7,14 +7,8 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include "config.h"
 
-typedef struct {
-  int serverport;
-  char *scheduling;
-  int thread_pool;
-  char *allowed;
-} config_struct;
+#define PIPE_NAME "named_pipe"
 
-config_struct *config;
-
-void configuration_start();
+void write_in_pipe();

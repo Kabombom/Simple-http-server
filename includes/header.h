@@ -16,6 +16,7 @@
 #include <signal.h>
 #include <pthread.h>
 #include <time.h>
+#include <fcntl.h>
 
 // Project header files
 #include "semlib.h"
@@ -35,6 +36,10 @@
 #define CGI_EXPR	"cgi-bin/"
 #define SIZE_BUF	1024
 #define BUFFER_SIZE 10 // Maximum number of requests in buffer
+
+// Pipe variables
+#define READ_SIZE 200
+#define PIPE_NAME "named_pipe"
 
 // Initial functions
 int  fireup(int port);
@@ -71,5 +76,5 @@ int statistics_pid;
 // Shared memory ids
 int shmid;
 
-//Semaphores id
+// Semaphores id
 int semid;
