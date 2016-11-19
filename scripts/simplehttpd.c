@@ -33,6 +33,8 @@ int main(int argc, char ** argv) {
 
   // Create Buffer
   create_buffer();
+
+  //Catch ctr-c
   signal(SIGINT, catch_ctrlc);
 
   port = config -> serverport;
@@ -163,16 +165,59 @@ void send_header(int socket) {
   return;
 }
 
+char *get_filename(char *file_path) { 
+  int i;
+  int passed_dot = 0;
+  char *filename = (char *) malloc(100*sizeof(char));
+
+  for (i = 0; i < strlen(file_path); i++) { 
+    if (file_path[i] == 46 && passed_dot == 0) {
+      passed_dot++;
+    } else if (file_path[i] == 46 && passed_dot > 0) {
+      return filename;
+    }
+    filename[i] = file_path[i];
+  }
+
+  return filename;
+}
 
 // Execute script in /cgi-bin
 void execute_script(int socket) {
   char command[200] = "gzip -d ";
-  // int run_unzip;
+  int run_unzip;
+  FILE *fp;
 
   sprintf(buf_tmp, "htdocs/%s", req_buf);
   strcat(command, buf_tmp);
-  system(command);
-  printf("requested %s\n", buf_tmp);
+  
+  // Verifies if file exists
+  if((fp = fopen(buf_tmp, "rt")) == NULL) {
+    // Page not found, send error to client
+    printf("send_page: page %s not found, alerting client\n", buf_tmp);
+    not_found(socket);
+  }
+  else {
+    run_unzip = system(command);
+    char *filename = get_filename(buf_tmp);
+
+    // Page found, send to client
+    // First send HTTP header back to client
+    send_header(socket);
+
+    printf("send_page: sending page %s to client\n", filename);
+
+    fclose(fp);
+    fp = fopen(filename, "rt");
+
+    while(fgets(filename, 100, fp)) {
+      send(socket, filename, strlen(filename), 0);
+    }
+
+    // Close file
+    fclose(fp);
+  }
+
   // cannot_execute(socket);
   return;
 }
