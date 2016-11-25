@@ -7,12 +7,16 @@ void terminate_thread() {
 
 // Threads routine
 void *scheduler_thread_routine() {
-  printf("This is a thread.\n");
+  while(1) {
+    printf("This is a thread.\n");
+    sleep(2);
+  }
   return NULL;
 }
 
 // Create pool of threads
 void create_scheduler_threads() {
+  signal(SIGUSR2, terminate_thread);
   int i;
   long ids[config -> thread_pool];
   // Create pool of threads

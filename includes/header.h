@@ -67,6 +67,8 @@ void create_pipe_thread();
 void start_pipe();
 void read_from_pipe();
 
+void terminate();
+
 char buf[SIZE_BUF];
 char req_buf[SIZE_BUF];
 char buf_tmp[SIZE_BUF];

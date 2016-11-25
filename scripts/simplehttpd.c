@@ -14,9 +14,6 @@ int main(int argc, char ** argv) {
   create_shared_memory();
   attach_shared_memory();
   configuration_start();
-  create_scheduler_threads();
-
-  create_pipe_thread();
 
   // Create Buffer
   create_buffer();
@@ -25,6 +22,10 @@ int main(int argc, char ** argv) {
   signal(SIGINT, catch_ctrlc);
 
   port = config -> serverport;
+
+  create_pipe_thread();
+  create_scheduler_threads();
+
   printf("Listening for HTTP requests on port %d\n", port);
 
   // Configure listening port
@@ -62,16 +63,7 @@ int main(int argc, char ** argv) {
     if (requests_buffer->current_size == BUFFER_SIZE) {
       perror("No buffer space available.\n");
 
-      // Terminate child processes
-      terminate_processes();
-      // Kill console thread
-      pthread_kill(0);
-      // Clean shared mem
-      delete_shared_memory();
-      // Print buffer
-      print_buffer();
-      // Clean buffer
-      delete_buffer();
+      terminate();
       exit(1);
     }
     else {
@@ -84,19 +76,7 @@ int main(int argc, char ** argv) {
     close(new_conn);
   }
 
-  // Wait for all threads to complete
-  // ////////////IMPORTANT////////////////////////////////
-  pthread_join(pipe_thread, NULL);
-  // ////////////////////////////////////////////
-
-  // Terminate child processes
-  terminate_processes();
-  // Clean shared mem
-  delete_shared_memory();
-  // Print buffer
-  print_buffer();
-  // Clean buffer
-  delete_buffer();
+  terminate();
 }
 
 // Processes request from client
@@ -379,11 +359,7 @@ void cannot_execute(int socket) {
 void catch_ctrlc(int sig) {
   printf(" Server terminating\n");
   close(socket_conn);
-  pthread_kill(pipe_thread, SIGUSR2);
-  terminate_processes();
-  delete_shared_memory();
-  print_buffer();
-  delete_buffer();
+  terminate();
   exit(0);
 }
 
@@ -398,6 +374,7 @@ void create_semaphores(number_of_sems) {
 
 // Delete semaphores
 void delete_semaphores() {
+  printf("Deleting semaphores...\n");
   sem_close(semid);
 }
 
@@ -433,7 +410,6 @@ void statistics() {
   printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
 }
 
-
 // Create necessary processes
 void create_processes() {
   parent_pid = getpid();
@@ -456,13 +432,12 @@ void terminate_processes() {
   kill(statistics_pid, SIGKILL);
 }
 
-void clean_thread_pipe() {
-  printf("Terminating thread...\n");
+void terminate_thread_pipe() {
   pthread_exit(0);
 }
 
 void *thread_pipe_routine() {
-  signal(SIGUSR2, clean_thread_pipe);
+  signal(SIGUSR2, terminate_thread_pipe);
   start_pipe();
   read_from_pipe();
   return NULL;
@@ -502,4 +477,30 @@ void read_from_pipe() {
       printf("=================\n");
     }
   }
+}
+
+// When program terminates, clean resources
+void terminate() {
+  int i;
+  
+  if(pthread_kill(pipe_thread, SIGUSR2) != 0) {
+    printf("Error deleting console thread\n");
+  }
+  for (i = 0; i < config->thread_pool; i++) {
+    if(pthread_kill(thread_pool[i], SIGUSR2) != 0) {
+      printf("Error deleting thread\n");
+    }
+  }
+
+  pthread_join(pipe_thread, NULL);
+  for (int i = 0; i < config->thread_pool; i++) {
+    pthread_join(thread_pool[i], NULL);
+  }
+
+  //wait(NULL);
+  terminate_processes();
+  delete_shared_memory();
+  delete_buffer();
+  delete_semaphores();
+  free(thread_pool);
 }
