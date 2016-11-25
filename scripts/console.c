@@ -5,13 +5,15 @@ int main() {
   char change[50];
   config_struct_aux new_config;
 
-  printf("Change:\n1 - Server Port\n2 - Scheduling\n3 - Number of threads\n4 - List of compressed files\n");
-  option = menu_protection();
-  printf("Change: ");
-  scanf("%s", change);
-  new_config.option = option;
-  strcpy(new_config.change, change);
-  write_in_pipe(new_config);
+  while(1) {
+    printf("Change:\n1 - Scheduling\n2 - Number of threads\n3 - List of compressed files\n");
+    option = menu_protection();
+    printf("Change: ");
+    scanf("%s", change);
+    new_config.option = option;
+    strcpy(new_config.change, change);
+    write_in_pipe(new_config);
+  }
 
   return 0;
 }
@@ -24,8 +26,8 @@ int menu_protection() {
     int len = strlen(str);
 
     while (i < len) {
-      if (str[i] < '0' || str[i] > '5' || i > 0) {
-        printf("Invalid Input. Choose number from 1 to 4");
+      if (str[i] < '0' || str[i] > '4' || i > 0) {
+        printf("Invalid Input. Choose number from 1 to 3");
         return menu_protection();
       }
       i++;
@@ -43,9 +45,8 @@ void write_in_pipe(config_struct_aux config) {
     perror("Cannot open pipe for writing: ");
     exit(0);
   }
-  while (1) {
-    printf("[CLIENT] Sending (%d %s) for adding\n", config.option, config.change);
-    write(fd, &config, sizeof(config_struct_aux));
-    sleep(2);
-  }
+
+  printf("[CLIENT] Sending (%d %s) for adding\n", config.option, config.change);
+  write(fd, &config, sizeof(config_struct_aux));
+  sleep(2);
 }

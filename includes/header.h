@@ -62,6 +62,8 @@ void create_shared_memory();
 void attach_shared_memory();
 void delete_shared_memory();
 
+void *thread_pipe_routine();
+void create_pipe_thread();
 void start_pipe();
 void read_from_pipe();
 
@@ -80,3 +82,5 @@ int shmid;
 
 // Semaphores id
 int semid;
+
+pthread_t pipe_thread;

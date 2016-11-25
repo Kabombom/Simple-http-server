@@ -15,19 +15,8 @@ int main(int argc, char ** argv) {
   attach_shared_memory();
   configuration_start();
   create_scheduler_threads();
-  start_pipe();
-  read_from_pipe();
 
-  /* Testing shared mem
-  if (config_pid == 0) {
-    config -> serverport = 50001;
-    printf("%d\n", config->serverport);
-  }
-  if (statistics_pid == 0) {
-    config -> serverport = 50002;
-    printf("%d\n", config->serverport);
-  }
-  ENDS */
+  create_pipe_thread();
 
   // Create Buffer
   create_buffer();
@@ -68,12 +57,6 @@ int main(int argc, char ** argv) {
       send_page(new_conn);
     }
 
-    /*
-    // Testing removing last request
-    if (requests_buffer->current_size == 1) {
-      remove_request_from_buffer();
-      exit(1);
-    } */
 
     // Add request to buffer if there is space in buffer
     if (requests_buffer->current_size == BUFFER_SIZE) {
@@ -81,6 +64,8 @@ int main(int argc, char ** argv) {
 
       // Terminate child processes
       terminate_processes();
+      // Kill console thread
+      pthread_kill(0);
       // Clean shared mem
       delete_shared_memory();
       // Print buffer
@@ -98,6 +83,11 @@ int main(int argc, char ** argv) {
     // Terminate connection with client
     close(new_conn);
   }
+
+  // Wait for all threads to complete
+  // ////////////IMPORTANT////////////////////////////////
+  pthread_join(pipe_thread, NULL);
+  // ////////////////////////////////////////////
 
   // Terminate child processes
   terminate_processes();
@@ -367,7 +357,6 @@ void not_found(int socket) {
   send(socket,buf, strlen(buf), 0);
   sprintf(buf,"</BODY></HTML>\r\n");
   send(socket,buf, strlen(buf), 0);
-
   return;
 }
 
@@ -382,7 +371,6 @@ void cannot_execute(int socket) {
   send(socket,buf, strlen(buf), 0);
   sprintf(buf,"<P>Error prohibited CGI execution.\r\n");
   send(socket,buf, strlen(buf), 0);
-
   return;
 }
 
@@ -391,6 +379,7 @@ void cannot_execute(int socket) {
 void catch_ctrlc(int sig) {
   printf(" Server terminating\n");
   close(socket_conn);
+  pthread_kill(pipe_thread, SIGUSR2);
   terminate_processes();
   delete_shared_memory();
   print_buffer();
@@ -467,6 +456,25 @@ void terminate_processes() {
   kill(statistics_pid, SIGKILL);
 }
 
+void clean_thread_pipe() {
+  printf("Terminating thread...\n");
+  pthread_exit(0);
+}
+
+void *thread_pipe_routine() {
+  signal(SIGUSR2, clean_thread_pipe);
+  start_pipe();
+  read_from_pipe();
+  return NULL;
+}
+
+void create_pipe_thread() {
+  // Create threads
+  if (pthread_create(&pipe_thread, NULL, thread_pipe_routine, (void *)25) != 0) {
+    perror("Error creating thread");
+  }
+}
+
 void start_pipe() {
   printf("----STARTING PIPE----\n");
   // Creates the named pipe if it doesn't exist yet
@@ -480,16 +488,18 @@ void start_pipe() {
 void read_from_pipe() {
   printf("----READING PIPE----\n");
   // Opens the pipe for reading
-  int fd;
+  int fd, pipe_received_values;
   if ((fd = open(PIPE_NAME, O_RDONLY)) < 0) {
       perror("Cannot open pipe for reading: ");
       exit(0);
   }
 
   config_struct_aux config_aux;
-  while (1) {
-    read(fd, &config_aux, sizeof(config_struct_aux));
-    printf("[SERVER] Received (%d)\n", config_aux.option);
-    printf("[SERVER] Received (%s)\n", config_aux.change);
+  while(1) {
+    if((pipe_received_values = read(fd, &config_aux, sizeof(config_struct_aux))) > 0) {
+      printf("=================\n");
+      printf("%d %s\n", config_aux.option, config_aux.change);
+      printf("=================\n");
+    }
   }
 }
