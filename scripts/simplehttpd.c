@@ -432,12 +432,8 @@ void terminate_processes() {
   kill(statistics_pid, SIGKILL);
 }
 
-void terminate_thread_pipe() {
-  pthread_exit(0);
-}
-
 void *thread_pipe_routine() {
-  signal(SIGUSR2, terminate_thread_pipe);
+  signal(SIGUSR2, terminate_thread);
   start_pipe();
   read_from_pipe();
   return NULL;
