@@ -2,6 +2,7 @@
 #include "../includes/config.h"
 
 void terminate_thread() {
+  printf("Terminating thread...\n");
   pthread_exit(0);
 }
 
@@ -16,7 +17,7 @@ void *scheduler_thread_routine() {
 
 // Create pool of threads
 void create_scheduler_threads() {
-  signal(SIGUSR2, terminate_thread);
+  signal(SIGUSR1, terminate_thread);
   int i;
   long ids[config -> thread_pool];
   // Create pool of threads
@@ -32,11 +33,6 @@ void create_scheduler_threads() {
     if (pthread_create(&thread_pool[i], NULL, scheduler_thread_routine, (void *)ids[i]) != 0) {
       perror("Error creating thread");
     }
-  }
-
-  // Wait for all threads to complete
-  for (i = 0; i < config->thread_pool; i++) {
-    pthread_join(thread_pool[i], NULL);
   }
 }
 

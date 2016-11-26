@@ -432,8 +432,42 @@ void terminate_processes() {
   kill(statistics_pid, SIGKILL);
 }
 
-void *thread_pipe_routine() {
+// Create pool of threads
+void create_new_threads(config_struct_aux config_aux) {
   signal(SIGUSR2, terminate_thread);
+  int i;
+  long ids[atoi(config_aux.change)];
+
+  // Create threads
+  for (i = config->thread_pool; i < atoi(config_aux.change); i++) {
+    ids[i] = i;
+    if (pthread_create(&thread_pool[i], NULL, scheduler_thread_routine, (void *)ids[i]) != 0) {
+      perror("Error creating thread");
+    }
+  }
+}
+
+void handle_console_comands(config_struct_aux config_aux) {
+  switch (config_aux.option) {
+    case 1:
+      printf("Option 1 not implemented yet\n");
+      break;
+    case 2:
+      // VERFUCAR SE O ENDEREÇO TEM ALGO
+      if (atoi(config_aux.change) > config->thread_pool) {
+        realloc(thread_pool, atoi(config_aux.change));
+        create_new_threads(config_aux);
+        config->thread_pool = atoi(config_aux.change);
+      }
+      break;
+    case 3:
+      printf("Option 3 not implemented yet\n");
+      break;
+  }
+}
+
+void *thread_pipe_routine() {
+  signal(SIGUSR1, terminate_thread);
   start_pipe();
   read_from_pipe();
   return NULL;
@@ -471,6 +505,7 @@ void read_from_pipe() {
       printf("=================\n");
       printf("%d %s\n", config_aux.option, config_aux.change);
       printf("=================\n");
+      handle_console_comands(config_aux);
     }
   }
 }
@@ -478,16 +513,17 @@ void read_from_pipe() {
 // When program terminates, clean resources
 void terminate() {
   int i;
-  
-  if(pthread_kill(pipe_thread, SIGUSR2) != 0) {
+
+  if(pthread_kill(pipe_thread, SIGUSR1) != 0) {
     printf("Error deleting console thread\n");
   }
   for (i = 0; i < config->thread_pool; i++) {
-    if(pthread_kill(thread_pool[i], SIGUSR2) != 0) {
+    if(pthread_kill(thread_pool[i], SIGUSR1) != 0) {
       printf("Error deleting thread\n");
     }
   }
 
+  // To kill a thread use pthread_kill. But that has to be done before pthread_join, otherwise the thread has already exited
   pthread_join(pipe_thread, NULL);
   for (int i = 0; i < config->thread_pool; i++) {
     pthread_join(thread_pool[i], NULL);

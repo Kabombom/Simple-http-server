@@ -62,6 +62,9 @@ void create_shared_memory();
 void attach_shared_memory();
 void delete_shared_memory();
 
+void create_new_threads(config_struct_aux config_aux);
+void handle_console_comands(config_struct_aux config_aux);
+
 void *thread_pipe_routine();
 void create_pipe_thread();
 void start_pipe();
