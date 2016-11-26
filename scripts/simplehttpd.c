@@ -448,16 +448,29 @@ void create_new_threads(config_struct_aux config_aux) {
 }
 
 void handle_console_comands(config_struct_aux config_aux) {
+  int new_number_of_threads;
   switch (config_aux.option) {
     case 1:
       printf("Option 1 not implemented yet\n");
       break;
     case 2:
-      // VERFUCAR SE O ENDEREÇO TEM ALGO
-      if (atoi(config_aux.change) > config->thread_pool) {
-        realloc(thread_pool, atoi(config_aux.change));
+      new_number_of_threads = atoi(config_aux.change);
+
+      if(new_number_of_threads > config->thread_pool) {
+        thread_pool = realloc(thread_pool, new_number_of_threads);
         create_new_threads(config_aux);
-        config->thread_pool = atoi(config_aux.change);
+        config->thread_pool = new_number_of_threads;
+      }
+      else if(new_number_of_threads < config->thread_pool) {
+        int i;
+        for (i = new_number_of_threads; i < config->thread_pool; i++) {
+          if(pthread_kill(thread_pool[i], SIGUSR1) != 0) {
+            printf("Error deleting thread\n");
+          }
+          pthread_join(thread_pool[i], NULL);
+        }
+        thread_pool = realloc(thread_pool, new_number_of_threads);
+        config->thread_pool = new_number_of_threads;
       }
       break;
     case 3:
