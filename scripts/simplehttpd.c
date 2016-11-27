@@ -14,6 +14,7 @@ int main(int argc, char ** argv) {
   create_shared_memory();
   attach_shared_memory();
   configuration_start();
+  create_semaphores(1);
 
   // Create Buffer
   create_buffer();
@@ -21,7 +22,7 @@ int main(int argc, char ** argv) {
   //Catch ctr-c
   signal(SIGINT, catch_ctrlc);
 
-  port = config -> serverport;
+  port = config->serverport;
 
   create_pipe_thread();
   create_scheduler_threads();
@@ -363,21 +364,6 @@ void catch_ctrlc(int sig) {
   exit(0);
 }
 
-// Create semaphores
-void create_semaphores(number_of_sems) {
-  semid = sem_get(number_of_sems, 1); // Creates a new array of semaphores with init_val = 1
-  if (semid == -1) {
-    perror("Failed to create semaphores");
-    exit(1);
-  }
-}
-
-// Delete semaphores
-void delete_semaphores() {
-  printf("Deleting semaphores...\n");
-  sem_close(semid);
-}
-
 // Creates shared memory
 void create_shared_memory() {
   shmid = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0777);
@@ -424,7 +410,6 @@ void create_processes() {
     exit(1);
   }
 }
-
 
 // Terminate child processes
 void terminate_processes() {

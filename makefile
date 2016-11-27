@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -pthread -Wall -g
-OBJS = scripts/simplehttpd.o scripts/config.o scripts/scheduler.o scripts/buffer.o includes/semlib.c
+OBJS = scripts/simplehttpd.o scripts/config.o scripts/buffer.o includes/semlib.c scripts/scheduler.o
 PROG = simplehttpd
 PATH_simplehttpd.c = scripts/simplehttpd.c
 PATH_header.h = includes/header.h
@@ -21,6 +21,6 @@ ${PROG}:	${OBJS}
 
 simplehttpd.o: PATH_simplehttpd.c PATH_header.h
 config.o:  PATH_config.c PATH_config.h
-scheduler.o:  PATH_scheduler.c PATH_scheduler.h
+scheduler.o:  PATH_scheduler.c PATH_scheduler.h PATH_buffer.h PATH_config.h PATH_semlib.h
 buffer.o: PATH_buffer.c PATH_buffer.h
 semlib.o: PATH_semlib.c PATH_semlib.h

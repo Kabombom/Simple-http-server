@@ -85,7 +85,4 @@ int statistics_pid;
 // Shared memory ids
 int shmid;
 
-// Semaphores id
-int semid;
-
 pthread_t pipe_thread;
