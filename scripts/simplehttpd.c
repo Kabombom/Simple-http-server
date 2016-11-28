@@ -533,7 +533,9 @@ void *scheduler_thread_routine() {
     pthread_mutex_lock(&mutex);
     if (requests_buffer->request != NULL) {
       printf("===================\n");
+      printf("Thread that responded %d\n", (int)pthread_self());
       printf("%s\n", requests_buffer->request->required_file);
+      printf("===================\n");
       Request *req = remove_request_from_buffer();
       // Verify if request is for a page or script
       if(!strncmp(req->required_file, CGI_EXPR, strlen(CGI_EXPR))) {

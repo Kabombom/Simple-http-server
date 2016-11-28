@@ -43,7 +43,6 @@ void add_request_to_buffer(Request *new_request) {
 
 // Remove requestr from buffer - FIFO
 Request *remove_request_from_buffer() {
-  print_buffer();
   Request *aux = requests_buffer->request;
   Request *temp;
   if (aux != NULL) {
