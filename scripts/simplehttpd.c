@@ -178,6 +178,9 @@ void execute_script(int socket, char *required_file) {
     fclose(fp);
   }
 
+  // Close socket connection
+  close(socket);
+
   // cannot_execute(socket);
   return;
 }
@@ -213,6 +216,9 @@ void send_page(int socket, char *required_file) {
     // Close file
     fclose(fp);
   }
+
+  // Close socket connection
+  close(socket);
 
   return;
 }
@@ -526,7 +532,7 @@ void *scheduler_thread_routine() {
     pthread_mutex_lock(&mutex);
     if (requests_buffer->request != NULL) {
       printf("===================\n");
-      printf("\n");
+      printf("%s\n", requests_buffer->request->required_file);
       Request *req = remove_request_from_buffer();
       // Verify if request is for a page or script
       if(!strncmp(req->required_file, CGI_EXPR, strlen(CGI_EXPR))) {
