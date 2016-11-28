@@ -527,6 +527,7 @@ void terminate_thread() {
 
 // Threads routine
 void *scheduler_thread_routine() {
+  signal(SIGUSR1, terminate_thread);
   while(1) {
     sem_wait(semid, 0);
     pthread_mutex_lock(&mutex);
@@ -551,7 +552,6 @@ void *scheduler_thread_routine() {
 
 // Create pool of threads
 void create_scheduler_threads() {
-  signal(SIGUSR1, terminate_thread);
   int i;
   long ids[config -> thread_pool];
   // Create pool of threads
