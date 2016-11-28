@@ -35,5 +35,5 @@ Buffer *requests_buffer;
 void create_buffer();
 void delete_buffer();
 void add_request_to_buffer();
-void remove_request_from_buffer();
+Request *remove_request_from_buffer();
 void print_buffer();

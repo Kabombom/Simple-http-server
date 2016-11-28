@@ -1,5 +1,19 @@
 #include "../includes/scheduler.h"
-#include "../includes/config.h"
+
+// Create semaphores
+void create_semaphores(int number_of_sems) {
+  semid = sem_get(number_of_sems, 1); // Creates a new array of semaphores with init_val = 1
+  if (semid == -1) {
+    perror("Failed to create semaphores");
+    exit(1);
+  }
+}
+
+// Delete semaphores
+void delete_semaphores() {
+  printf("Deleting semaphores...\n");
+  sem_close(semid);
+}
 
 void terminate_thread() {
   printf("Terminating thread...\n");
@@ -9,8 +23,19 @@ void terminate_thread() {
 // Threads routine
 void *scheduler_thread_routine() {
   while(1) {
-    printf("This is a thread.\n");
-    sleep(2);
+    sem_wait(semid, 0);
+    pthread_mutex_lock(&mutex);
+    if (strcmp(config->scheduling, "NORMAL") == 0) {
+      printf("before\n");
+      Request *request = remove_request_from_buffer();
+      printf("after\n");
+      if (request != NULL) {
+        printf("request removed: %s\n", request->required_file);
+      }
+    }
+    pthread_mutex_unlock(&mutex);
+    sem_post(semid, 0);
+    sleep(1);
   }
   return NULL;
 }

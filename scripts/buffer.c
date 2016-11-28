@@ -29,6 +29,7 @@ void add_request_to_buffer(Request *new_request) {
   printf("Adding request to buffer: %s\n", new_request -> required_file);
   if (requests_buffer->request == NULL) {
     requests_buffer->request = new_request;
+    new_request->next = NULL;
     return;
   }
   Request *aux = requests_buffer->request;
@@ -41,21 +42,22 @@ void add_request_to_buffer(Request *new_request) {
 }
 
 // Remove requestr from buffer - FIFO
-void remove_request_from_buffer() {
+Request *remove_request_from_buffer() {
   Request *aux = requests_buffer->request;
-  Request *aux_n;
+  Request *temp;
   if (aux != NULL) {
     printf("Removing oldest request from buffer: %s\n", aux->required_file);
     while (aux->next != NULL ) {
-      aux_n = aux;
       aux = aux->next;
     }
-    free(aux_n->next);
-    aux_n->next = NULL;
+    temp = aux;
+    printf("OIIIIIIIIIIIIIIIIIIIIII\n");
+    free(aux);
+    requests_buffer->request = NULL;
+    return temp;
   }
-  else {
-    perror("There are no requests in the buffer.");
-  }
+  printf("DEVOLVE ALI\n");
+  return NULL;
 }
 
 void print_buffer() {
