@@ -19,6 +19,7 @@ int main(int argc, char ** argv) {
   create_buffer();
 
   create_semaphores(1);
+  sem_setvalue(semid, 0, 5);
   //Catch ctr-c
   signal(SIGINT, catch_ctrlc);
 
