@@ -14,11 +14,11 @@ int main(int argc, char ** argv) {
   create_shared_memory();
   attach_shared_memory();
   configuration_start();
-  create_semaphores(1);
 
   // Create Buffer
   create_buffer();
 
+  create_semaphores(1);
   //Catch ctr-c
   signal(SIGINT, catch_ctrlc);
 
@@ -50,21 +50,11 @@ int main(int argc, char ** argv) {
     // Process request
     get_request(new_conn);
 
-    // Verify if request is for a page or script
-    if(!strncmp(req_buf, CGI_EXPR, strlen(CGI_EXPR))) {
-      execute_script(new_conn);
-    }
-    else {
-      // Search file with html page and send to client
-      send_page(new_conn);
-    }
-
-
     // Add request to buffer if there is space in buffer
     if (requests_buffer->current_size == BUFFER_SIZE) {
       perror("No buffer space available.\n");
-
       terminate();
+      close(new_conn);
       exit(1);
     }
     else {
@@ -73,11 +63,12 @@ int main(int argc, char ** argv) {
       req->get_request_time = time(NULL);
       add_request_to_buffer(req);
     }
-    // Terminate connection with client
-    close(new_conn);
+
   }
 
   terminate();
+  // Terminate connection with client
+  close(new_conn);
 }
 
 // Processes request from client
@@ -152,12 +143,12 @@ char *get_filename(char *file_path) {
 }
 
 // Execute script in /cgi-bin
-void execute_script(int socket) {
+void execute_script(int socket, char *required_file) {
   char command[200] = "gzip -d ";
   int run_unzip;
   FILE *fp;
 
-  sprintf(buf_tmp, "htdocs/%s", req_buf);
+  sprintf(buf_tmp, "htdocs/%s", required_file);
   strcat(command, buf_tmp);
 
   // Verifies if file exists
@@ -193,11 +184,11 @@ void execute_script(int socket) {
 
 
 // Send html page to client
-void send_page(int socket) {
+void send_page(int socket, char *required_file) {
   FILE * fp;
 
   // Searchs for page in directory htdocs
-  sprintf(buf_tmp,"htdocs/%s", req_buf);
+  sprintf(buf_tmp,"htdocs/%s", required_file);
 
   #if DEBUG
   printf("send_page: searching for %s\n",buf_tmp);
@@ -505,6 +496,80 @@ void read_from_pipe() {
       printf("=================\n");
       handle_console_comands(config_aux);
     }
+  }
+}
+
+// Create semaphores
+void create_semaphores(int number_of_sems) {
+  semid = sem_get(number_of_sems, 1); // Creates a new array of semaphores with init_val = 1
+  if (semid == -1) {
+    perror("Failed to create semaphores");
+    exit(1);
+  }
+}
+
+// Delete semaphores
+void delete_semaphores() {
+  printf("Deleting semaphores...\n");
+  sem_close(semid);
+}
+
+void terminate_thread() {
+  printf("Terminating thread...\n");
+  pthread_exit(0);
+}
+
+// Threads routine
+void *scheduler_thread_routine() {
+  while(1) {
+    sem_wait(semid, 0);
+    pthread_mutex_lock(&mutex);
+    if (requests_buffer->request != NULL) {
+      printf("===================\n");
+      printf("\n");
+      Request *req = remove_request_from_buffer();
+      // Verify if request is for a page or script
+      if(!strncmp(req->required_file, CGI_EXPR, strlen(CGI_EXPR))) {
+        execute_script(new_conn, req->required_file);
+      }
+      else {
+        // Search file with html page and send to client
+        send_page(new_conn, req->required_file);
+      }
+    }
+    pthread_mutex_unlock(&mutex);
+    sem_post(semid, 0);
+  }
+  return NULL;
+}
+
+// Create pool of threads
+void create_scheduler_threads() {
+  signal(SIGUSR1, terminate_thread);
+  int i;
+  long ids[config -> thread_pool];
+  // Create pool of threads
+  thread_pool = malloc(sizeof(pthread_t) * config->thread_pool);
+
+  if (thread_pool == NULL) {
+    perror("Error allocating memory for threads\n");
+  }
+
+  // Create threads
+  for (i = 0; i < config->thread_pool; i++) {
+    ids[i] = i;
+    if (pthread_create(&thread_pool[i], NULL, scheduler_thread_routine, (void *)ids[i]) != 0) {
+      perror("Error creating thread");
+    }
+  }
+}
+
+// Delete threads
+void delete_scheduler_threads() {
+  printf("Cleaning up scheduler...\n");
+  int i;
+  for (i = 0; i < config->thread_pool; i++) {
+    pthread_join(thread_pool[i], NULL);
   }
 }
 

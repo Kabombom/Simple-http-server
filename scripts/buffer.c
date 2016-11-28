@@ -29,6 +29,7 @@ void add_request_to_buffer(Request *new_request) {
   printf("Adding request to buffer: %s\n", new_request -> required_file);
   if (requests_buffer->request == NULL) {
     requests_buffer->request = new_request;
+    new_request->next = NULL;
     return;
   }
   Request *aux = requests_buffer->request;

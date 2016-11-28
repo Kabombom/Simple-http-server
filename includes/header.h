@@ -21,7 +21,6 @@
 // Project header files
 #include "semlib.h"
 #include "config.h"
-#include "scheduler.h"
 #include "buffer.h"
 
 // Produce debug information
@@ -46,8 +45,8 @@ void identify(int socket);
 void get_request(int socket);
 int  read_line(int socket, int n);
 void send_header(int socket);
-void send_page(int socket);
-void execute_script(int socket);
+void send_page(int socket, char *required_file);
+void execute_script(int socket, char *required_file);
 void not_found(int socket);
 void catch_ctrlc(int);
 void cannot_execute(int socket);
@@ -70,6 +69,13 @@ void create_pipe_thread();
 void start_pipe();
 void read_from_pipe();
 
+void create_semaphores();
+void delete_semaphores();
+void terminate_thread();
+void *scheduler_thread_routine();
+void create_scheduler_threads();
+void delete_scheduler_threads();
+
 void terminate();
 
 char buf[SIZE_BUF];
@@ -85,4 +91,9 @@ int statistics_pid;
 // Shared memory ids
 int shmid;
 
+// Semaphores id
+int semid;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_t *thread_pool;
 pthread_t pipe_thread;
