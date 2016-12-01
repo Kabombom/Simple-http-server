@@ -24,5 +24,5 @@ ${PROG}:	${OBJS}
 simplehttpd.o: PATH_simplehttpd.c PATH_header.h
 config.o:  PATH_config.c PATH_config.h
 buffer.o: PATH_buffer.c PATH_buffer.h
-buffer.o: PATH_statistics.c PATH_statistics.h
+statistics.o: PATH_statistics.c PATH_statistics.h
 semlib.o: PATH_semlib.c PATH_semlib.h

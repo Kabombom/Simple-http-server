@@ -1,16 +1,9 @@
-/*
-* A (very) simple HTTP server
-* Sistemas Operativos 2016/2017
-*/
-
 #include "../includes/header.h"
 
 int main(int argc, char ** argv) {
   struct sockaddr_in client_name;
   socklen_t client_name_len = sizeof(client_name);
   int port;
-
-  signal(SIGUSR1, print_statistics);
 
   create_processes();
   create_shared_memory();
@@ -24,13 +17,10 @@ int main(int argc, char ** argv) {
 
   signal(SIGINT, catch_ctrlc);
 
-  kill(getpid(), SIGUSR1);
-
   port = config->serverport;
 
   create_pipe_thread();
   create_scheduler_threads();
-
 
   printf("Listening for HTTP requests on port %d\n", port);
 
