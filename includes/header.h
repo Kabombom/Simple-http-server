@@ -22,6 +22,7 @@
 #include "semlib.h"
 #include "config.h"
 #include "buffer.h"
+#include "statistics.h"
 
 // Produce debug information
 #define DEBUG	  	1
