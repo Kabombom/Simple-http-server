@@ -10,23 +10,27 @@ int main(int argc, char ** argv) {
   socklen_t client_name_len = sizeof(client_name);
   int port;
 
+  signal(SIGUSR1, print_statistics);
+
   create_processes();
   create_shared_memory();
   attach_shared_memory();
   configuration_start();
 
-  // Create Buffer
   create_buffer();
 
   create_semaphores(1);
   sem_setvalue(semid, 0, 5);
-  //Catch ctr-c
+
   signal(SIGINT, catch_ctrlc);
+
+  kill(getpid(), SIGUSR1);
 
   port = config->serverport;
 
   create_pipe_thread();
   create_scheduler_threads();
+
 
   printf("Listening for HTTP requests on port %d\n", port);
 
