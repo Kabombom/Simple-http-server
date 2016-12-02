@@ -9,7 +9,6 @@ int main(int argc, char ** argv) {
   create_shared_memory();
   attach_shared_memory();
   configuration_start();
-  create_mmf();
 
   create_buffer();
 
@@ -511,40 +510,6 @@ void read_from_pipe() {
       handle_console_comands(config_aux);
     }
   }
-}
-
-// Create Memory Mapped file
-void create_mmf() {
-  int fdin;
-  char *src;
-  struct stat statbuf;
-  int size = 100;
-  char file[100] = "mmf.txt";
-
-  // Open the input file
-  if ((fdin = open (file, O_RDONLY | O_CREAT)) < 0){
-    printf("can't open %s\n", file);
-    //exit(1);
-  }
-
-  // Go to the location corresponding to the last byte
-  if (lseek (fdin, size - 1, SEEK_SET) == -1) {
-    printf("lseek error\n");
-    //exit(1);
-  }
-
-  // Write a byte at the last location
-  if (write (fdin, "", 1) != 1){
-    printf("write error\n");
-    //exit(1);
-  }
-
-  // mmap the input file 
-  if ((src = mmap (0, statbuf.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fdin, 0)) == (caddr_t) -1){
-    printf("mmap error for input\n");
-    //exit(1);
-  }
-
 }
 
 // Create semaphores

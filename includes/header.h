@@ -17,7 +17,6 @@
 #include <pthread.h>
 #include <time.h>
 #include <fcntl.h>
-#include <sys/mman.h>
 
 // Project header files
 #include "semlib.h"
@@ -70,8 +69,6 @@ void *thread_pipe_routine();
 void create_pipe_thread();
 void start_pipe();
 void read_from_pipe();
-
-void create_mmf();
 
 void create_semaphores();
 void delete_semaphores();
