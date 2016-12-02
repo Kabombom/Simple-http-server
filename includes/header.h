@@ -17,6 +17,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <fcntl.h>
+#include <sys/mman.h>
 
 // Project header files
 #include "semlib.h"
@@ -43,11 +44,11 @@
 // Initial functions
 int  fireup(int port);
 void identify(int socket);
-void get_request(int socket);
+time_t get_request(int socket);
 int  read_line(int socket, int n);
 void send_header(int socket);
-void send_page(int socket, char *required_file);
-void execute_script(int socket, char *required_file);
+void send_page(int socket, Request *request);
+void execute_script(int socket, Request *request);
 void not_found(int socket);
 void catch_ctrlc(int);
 void cannot_execute(int socket);
@@ -69,6 +70,8 @@ void *thread_pipe_routine();
 void create_pipe_thread();
 void start_pipe();
 void read_from_pipe();
+
+void create_mmf();
 
 void create_semaphores();
 void delete_semaphores();
