@@ -385,7 +385,10 @@ void delete_shared_memory() {
 
 // Statistics process  function
 void statistics() {
-  printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
+  while(1) {
+    printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
+    sleep(1);
+  }
 }
 
 // Create necessary processes
