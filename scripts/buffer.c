@@ -26,32 +26,27 @@ void delete_buffer() {
 
 // Add request to buffer
 void add_request_to_buffer(int ready, char *required_file, time_t get_request_time, time_t serve_request_time) {
+  // Create Request
   Request *new_request = (Request *) malloc(sizeof(Request));
   new_request->ready = ready;
   new_request->required_file = (char *) malloc(50 *sizeof(char));
   strcpy(new_request->required_file, required_file);
   new_request->get_request_time = get_request_time;
   new_request->serve_request_time = serve_request_time;
-  new_request->next = NULL;
-  new_request->prev = NULL;
 
   printf("Adding request to buffer: %s\n", new_request -> required_file);
-  printf("2Current size of buffer_ %d\n", requests_buffer->current_size);
   if (requests_buffer->request == NULL) {
-    printf("ESTA MERDA\n");
     requests_buffer->request = new_request;
     new_request->next = NULL;
+    new_request->prev = NULL;
     return;
   }
 
+  printf("PASSOU ALELUIAAAAAAAAAAAAAAAAAA\n");
   Request *aux = requests_buffer->request;
-  while(aux -> next != NULL) {
-    aux = aux->next;
-  }
-
-  aux->next = new_request;
-  new_request->prev = aux;
-  new_request->next = NULL;
+  new_request->next = aux;
+  new_request->prev = NULL;
+  requests_buffer->request = new_request;
   requests_buffer->current_size++;
   printf("Current size of buffer_ %d\n", requests_buffer->current_size);
 }
@@ -95,4 +90,3 @@ void print_buffer() {
     counter++;
   }
 }
-

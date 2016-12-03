@@ -9,7 +9,6 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/ipc.h>
-#include <sys/sem.h>
 #include <sys/shm.h>
 #include <stdlib.h>
 #include <string.h>

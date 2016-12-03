@@ -11,9 +11,7 @@ int main(int argc, char ** argv) {
   configuration_start();
 
   create_buffer();
-
-  create_semaphores(1);
-  sem_setvalue(semid, 0, 5);
+  create_semaphores();
 
   signal(SIGINT, catch_ctrlc);
 
@@ -27,7 +25,7 @@ int main(int argc, char ** argv) {
   // Configure listening port
   // If port given is invalid, exit
   if ((socket_conn = fireup(port)) == -1) {
-    exit(1);
+    terminate();
   }
 
   // Serve requests
@@ -36,7 +34,7 @@ int main(int argc, char ** argv) {
     // Exit if error occurs while connecting
     if ( (new_conn = accept(socket_conn, (struct sockaddr *)&client_name, &client_name_len)) == -1 ) {
       printf("Error accepting connection\n");
-      exit(1);
+      terminate();
     }
 
     // Identify new client by address and port
@@ -52,7 +50,11 @@ int main(int argc, char ** argv) {
       close(new_conn);
       exit(1);
     }*/
+    pthread_mutex_lock(buffer_mutex);
+    sem_wait(sem_buffer_full);
     add_request_to_buffer(0, req_buf, time(NULL), time(NULL));
+    pthread_mutex_unlock(buffer_mutex);
+    sem_post(sem_buffer_empty);
   }
 
   terminate();
@@ -379,10 +381,7 @@ void delete_shared_memory() {
 
 // Statistics process  function
 void statistics() {
-  while(1) {
-    printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
-    sleep(5);
-  }
+  printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
 }
 
 // Create necessary processes
@@ -498,18 +497,23 @@ void read_from_pipe() {
 }
 
 // Create semaphores
-void create_semaphores(int number_of_sems) {
-  semid = sem_get(number_of_sems, 1); // Creates a new array of semaphores with init_val = 1
-  if (semid == -1) {
-    perror("Failed to create semaphores");
-    exit(1);
-  }
+void create_semaphores() {
+  sem_unlink("buffer_full");
+  sem_buffer_full = sem_open("buffer_full", O_CREAT|O_EXCL, 0700, config->thread_pool * 2);
+  sem_unlink("buffer_empty");
+  sem_buffer_empty = sem_open("buffer_empty", O_CREAT|O_EXCL, 0700, 0);
+  buffer_mutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(buffer_mutex, NULL);
 }
 
 // Delete semaphores
 void delete_semaphores() {
   printf("Deleting semaphores...\n");
-  sem_close(semid);
+  sem_unlink("buffer_full");
+  sem_close(sem_buffer_full);
+  sem_unlink("buffer_empty");
+  sem_close(sem_buffer_empty);
+  pthread_mutex_destroy(buffer_mutex);
 }
 
 void terminate_thread() {
@@ -521,25 +525,27 @@ void terminate_thread() {
 void *scheduler_thread_routine() {
   signal(SIGUSR1, terminate_thread);
   while(1) {
-    sem_wait(semid, 0);
-    pthread_mutex_lock(&mutex);
-    if (requests_buffer->request != NULL) {
-      printf("===================\n");
-      printf("Thread that responded %d\n", (int)pthread_self());
-      printf("%s\n", requests_buffer->request->required_file);
-      printf("===================\n");
-      Request *req = remove_request_from_buffer();
-      // Verify if request is for a page or script
-      if(!strncmp(req->required_file, CGI_EXPR, strlen(CGI_EXPR))) {
-        execute_script(new_conn, req->required_file);
-      }
-      else {
-        // Search file with html page and send to client
-        send_page(new_conn, req->required_file);
-      }
+    sem_wait(sem_buffer_empty);
+    pthread_mutex_lock(buffer_mutex);
+
+    printf("===================\n");
+    printf("Thread that responded %d\n", (int)pthread_self());
+    printf("%s\n", requests_buffer->request->required_file);
+    printf("===================\n");
+    Request *req = remove_request_from_buffer();
+
+    // Verify if request is for a page or script
+    if(!strncmp(req->required_file, CGI_EXPR, strlen(CGI_EXPR))) {
+      execute_script(new_conn, req->required_file);
     }
-    pthread_mutex_unlock(&mutex);
-    sem_post(semid, 0);
+    else {
+      // Search file with html page and send to client
+      send_page(new_conn, req->required_file);
+    }
+
+    pthread_mutex_unlock(buffer_mutex);
+    sem_post(sem_buffer_full);
+    sleep(1);
   }
   return NULL;
 }
@@ -588,7 +594,7 @@ void terminate() {
 
   // To kill a thread use pthread_kill. But that has to be done before pthread_join, otherwise the thread has already exited
   pthread_join(pipe_thread, NULL);
-  for (int i = 0; i < config->thread_pool; i++) {
+  for (i = 0; i < config->thread_pool; i++) {
     pthread_join(thread_pool[i], NULL);
   }
 

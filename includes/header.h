@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/ipc.h>
-#include <sys/sem.h>
+#include <semaphore.h>
 #include <sys/shm.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +19,6 @@
 #include <fcntl.h>
 
 // Project header files
-#include "semlib.h"
 #include "config.h"
 #include "buffer.h"
 #include "statistics.h"
@@ -93,8 +92,9 @@ int statistics_pid;
 int shmid;
 
 // Semaphores id
-int semid;
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+sem_t *sem_buffer_empty; //If buffer is empty the value of the sem is 0
+sem_t *sem_buffer_full; //If buffer is full the value of the sem is 0
+pthread_mutex_t *buffer_mutex;
 
 pthread_t *thread_pool;
 pthread_t pipe_thread;
