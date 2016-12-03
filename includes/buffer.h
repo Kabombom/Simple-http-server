@@ -14,10 +14,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <time.h>
 
 typedef struct request {
   int ready;
-  int conn;
   char *required_file;
   time_t get_request_time;
 	time_t serve_request_time;
@@ -34,6 +34,6 @@ Buffer *requests_buffer;
 
 void create_buffer();
 void delete_buffer();
-void add_request_to_buffer();
+void add_request_to_buffer(int ready, char *required_file, time_t get_request_time, time_t serve_request_time);
 Request *remove_request_from_buffer();
 void print_buffer();

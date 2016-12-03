@@ -46,19 +46,13 @@ int main(int argc, char ** argv) {
     get_request(new_conn);
 
     // Add request to buffer if there is space in buffer
-    if (requests_buffer->current_size == BUFFER_SIZE) {
+    /*if (requests_buffer->current_size == BUFFER_SIZE) {
       perror("No buffer space available.\n");
       terminate();
       close(new_conn);
       exit(1);
-    }
-    else {
-      Request *req = (Request*) malloc(sizeof(Request));
-      req->required_file = req_buf;
-      req->get_request_time = time(NULL);
-      add_request_to_buffer(req);
-    }
-
+    }*/
+    add_request_to_buffer(0, req_buf, time(NULL), time(NULL));
   }
 
   terminate();
@@ -387,7 +381,7 @@ void delete_shared_memory() {
 void statistics() {
   while(1) {
     printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
-    sleep(1);
+    sleep(5);
   }
 }
 
