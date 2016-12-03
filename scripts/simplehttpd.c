@@ -424,7 +424,8 @@ void handle_console_comands(config_struct_aux config_aux) {
   int new_number_of_threads;
   switch (config_aux.option) {
     case 1:
-      printf("Option 1 not implemented yet\n");
+      printf("Changing type of scheduler...\n");
+      strcpy(config->scheduling, config_aux.change);
       break;
     case 2:
       new_number_of_threads = atoi(config_aux.change);
@@ -447,7 +448,8 @@ void handle_console_comands(config_struct_aux config_aux) {
       }
       break;
     case 3:
-      printf("Option 3 not implemented yet\n");
+      printf("Changing permited compressed files\n");
+      strcpy(config->allowed, config_aux.change);
       break;
   }
 }
