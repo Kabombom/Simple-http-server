@@ -98,3 +98,6 @@ pthread_mutex_t *buffer_mutex;
 
 pthread_t *thread_pool;
 pthread_t pipe_thread;
+pthread_t scheduler;
+
+Request *last_requests;

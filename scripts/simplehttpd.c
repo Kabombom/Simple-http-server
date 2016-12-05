@@ -32,16 +32,23 @@ int main(int argc, char ** argv) {
   while (1) {
     // Accept connection on socket
     // Exit if error occurs while connecting
+    printf("accept\n");
     if ( (new_conn = accept(socket_conn, (struct sockaddr *)&client_name, &client_name_len)) == -1 ) {
       printf("Error accepting connection\n");
       terminate();
     }
+    printf("// accept\n");
+
 
     // Identify new client by address and port
     identify(new_conn);
+    printf("// identify\n");
+
 
     // Process request
     get_request(new_conn);
+    printf("// get_request\n");
+
 
     // Add request to buffer if there is space in buffer
     /*if (requests_buffer->current_size == BUFFER_SIZE) {
@@ -50,11 +57,11 @@ int main(int argc, char ** argv) {
       close(new_conn);
       exit(1);
     }*/
-    pthread_mutex_lock(buffer_mutex);
-    sem_wait(sem_buffer_full);
+    printf("add_request_to_buffer\n");
     add_request_to_buffer(0, req_buf, time(NULL), time(NULL));
-    pthread_mutex_unlock(buffer_mutex);
+    printf("//add_request_to_buffer\n");
     sem_post(sem_buffer_empty);
+    printf("// post add_request_to_buffer\n");
   }
 
   terminate();
@@ -534,7 +541,8 @@ void *scheduler_thread_routine() {
     printf("Thread that responded %d\n", (int)pthread_self());
     printf("%s\n", requests_buffer->request->required_file);
     printf("===================\n");
-    Request *req = remove_request_from_buffer();
+    Request *req = get_request_by_fifo();
+    pthread_mutex_unlock(buffer_mutex);
 
     // Verify if request is for a page or script
     if(!strncmp(req->required_file, CGI_EXPR, strlen(CGI_EXPR))) {
@@ -545,9 +553,6 @@ void *scheduler_thread_routine() {
       send_page(new_conn, req->required_file);
     }
 
-    pthread_mutex_unlock(buffer_mutex);
-    sem_post(sem_buffer_full);
-    sleep(1);
   }
   return NULL;
 }

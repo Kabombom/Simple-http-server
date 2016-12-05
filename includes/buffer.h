@@ -34,5 +34,7 @@ Buffer *requests_buffer;
 void create_buffer();
 void delete_buffer();
 void add_request_to_buffer(int ready, char *required_file, time_t get_request_time, time_t serve_request_time);
-Request *remove_request_from_buffer();
+Request *get_request_by_fifo();
+Request *get_request_by_static();
+Request *get_request_by_compressed();
 void print_buffer();
