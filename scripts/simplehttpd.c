@@ -43,7 +43,7 @@ int main(int argc, char ** argv) {
     identify(new_conn);
 
     // Process request
-    get_request(new_conn);
+    time_t request_time = get_request(new_conn);
 
     // Add request to buffer if there is space in buffer
     if (requests_buffer->current_size == BUFFER_SIZE) {
@@ -55,7 +55,7 @@ int main(int argc, char ** argv) {
     else {
       Request *req = (Request*) malloc(sizeof(Request));
       req->required_file = req_buf;
-      req->get_request_time = time(NULL);
+      req->get_request_time = request_time;
       add_request_to_buffer(req);
     }
 
@@ -66,8 +66,8 @@ int main(int argc, char ** argv) {
   close(new_conn);
 }
 
-// Processes request from client
-void get_request(int socket) {
+// Processes request from client and returns get_request_time
+time_t get_request(int socket) {
   int i, j;
   int found_get;
 
@@ -81,7 +81,7 @@ void get_request(int socket) {
       i = strlen(GET_EXPR);
       j = 0;
 
-      while( (buf[i] != ' ') && (buf[i] != '\0') ) {
+      while((buf[i] != ' ') && (buf[i] != '\0')) {
         req_buf[j++] = buf[i++];
       }
       req_buf[j] = '\0';
@@ -93,16 +93,17 @@ void get_request(int socket) {
     printf("Request from client without a GET\n");
     exit(1);
   }
+
   // If no particular page is requested then we consider htdocs/index.html
   if(!strlen(req_buf)) {
-    sprintf(req_buf,"index.html");
+    sprintf(req_buf, "index.html");
   }
 
   #if DEBUG
   printf("get_request: client requested the following page: %s\n",req_buf);
   #endif
 
-  return;
+  return time(NULL);
 }
 
 
@@ -138,12 +139,12 @@ char *get_filename(char *file_path) {
 }
 
 // Execute script in /cgi-bin
-void execute_script(int socket, char *required_file) {
+void execute_script(int socket, Request *request) {
   char command[200] = "gzip -d ";
   int run_unzip;
   FILE *fp;
 
-  sprintf(buf_tmp, "htdocs/%s", required_file);
+  sprintf(buf_tmp, "htdocs/%s", request->required_file);
   strcat(command, buf_tmp);
 
   // Verifies if file exists
@@ -182,14 +183,14 @@ void execute_script(int socket, char *required_file) {
 
 
 // Send html page to client
-void send_page(int socket, char *required_file) {
+void send_page(int socket, Request *request) {
   FILE * fp;
 
   // Searchs for page in directory htdocs
-  sprintf(buf_tmp,"htdocs/%s", required_file);
+  sprintf(buf_tmp,"htdocs/%s", request->required_file);
 
   #if DEBUG
-  printf("send_page: searching for %s\n",buf_tmp);
+  printf("send_page: searching for %s\n", buf_tmp);
   #endif
 
   // Verifies if file exists
@@ -202,6 +203,8 @@ void send_page(int socket, char *required_file) {
     // Page found, send to client
     // First send HTTP header back to client
     send_header(socket);
+    request->serve_request_time = time(NULL);
+    get_request_information("Type", request->required_file, request->get_request_time, request->serve_request_time);
 
     printf("send_page: sending page %s to client\n", buf_tmp);
     while(fgets(buf_tmp, SIZE_BUF, fp)) {
@@ -383,11 +386,12 @@ void delete_shared_memory() {
 }
 
 
-// Statistics process  function
+// Statistics process function
 void statistics() {
+  signal(SIGUSR1, print_statistics);
   while(1) {
     printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
-    sleep(1);
+    sleep(5);
   }
 }
 
@@ -429,10 +433,12 @@ void create_new_threads(config_struct_aux config_aux) {
 
 void handle_console_comands(config_struct_aux config_aux) {
   int new_number_of_threads;
+
   switch (config_aux.option) {
     case 1:
       printf("Option 1 not implemented yet\n");
       break;
+
     case 2:
       new_number_of_threads = atoi(config_aux.change);
 
@@ -441,6 +447,7 @@ void handle_console_comands(config_struct_aux config_aux) {
         create_new_threads(config_aux);
         config->thread_pool = new_number_of_threads;
       }
+
       else if(new_number_of_threads < config->thread_pool) {
         int i;
         for (i = new_number_of_threads; i < config->thread_pool; i++) {
@@ -452,7 +459,9 @@ void handle_console_comands(config_struct_aux config_aux) {
         thread_pool = realloc(thread_pool, new_number_of_threads);
         config->thread_pool = new_number_of_threads;
       }
+
       break;
+
     case 3:
       printf("Option 3 not implemented yet\n");
       break;
@@ -537,11 +546,11 @@ void *scheduler_thread_routine() {
       Request *req = remove_request_from_buffer();
       // Verify if request is for a page or script
       if(!strncmp(req->required_file, CGI_EXPR, strlen(CGI_EXPR))) {
-        execute_script(new_conn, req->required_file);
+        execute_script(new_conn, req);
       }
       else {
         // Search file with html page and send to client
-        send_page(new_conn, req->required_file);
+        send_page(new_conn, req);
       }
     }
     pthread_mutex_unlock(&mutex);
