@@ -37,7 +37,7 @@ int main(int argc, char ** argv) {
       printf("Error accepting connection\n");
       terminate();
     }
-    printf("// accept\n");
+    printf("// accept new_conn: %d\n", new_conn);
 
 
     // Identify new client by address and port
@@ -51,22 +51,19 @@ int main(int argc, char ** argv) {
 
 
     // Add request to buffer if there is space in buffer
-    /*if (requests_buffer->current_size == BUFFER_SIZE) {
+    if (requests_buffer->current_size == BUFFER_SIZE) {
       perror("No buffer space available.\n");
       terminate();
-      close(new_conn);
       exit(1);
-    }*/
+    }
     printf("add_request_to_buffer\n");
-    add_request_to_buffer(0, req_buf, time(NULL), time(NULL));
+    add_request_to_buffer(0, new_conn, req_buf, time(NULL), time(NULL));
     printf("//add_request_to_buffer\n");
     sem_post(sem_buffer_empty);
     printf("// post add_request_to_buffer\n");
   }
 
   terminate();
-  // Terminate connection with client
-  close(new_conn);
 }
 
 // Processes request from client
@@ -176,9 +173,6 @@ void execute_script(int socket, char *required_file) {
     fclose(fp);
   }
 
-  // Close socket connection
-  close(socket);
-
   // cannot_execute(socket);
   return;
 }
@@ -214,9 +208,6 @@ void send_page(int socket, char *required_file) {
     // Close file
     fclose(fp);
   }
-
-  // Close socket connection
-  close(socket);
 
   return;
 }
@@ -354,7 +345,6 @@ void cannot_execute(int socket) {
 // Closes socket before closing
 void catch_ctrlc(int sig) {
   printf(" Server terminating\n");
-  close(socket_conn);
   terminate();
   exit(0);
 }
@@ -537,22 +527,27 @@ void *scheduler_thread_routine() {
     sem_wait(sem_buffer_empty);
     pthread_mutex_lock(buffer_mutex);
 
+    Request *req = get_request_by_fifo();
+    printf("temp eq: %s conn: %d\n", req->required_file, req->conn);
     printf("===================\n");
     printf("Thread that responded %d\n", (int)pthread_self());
-    printf("%s\n", requests_buffer->request->required_file);
+    printf("%s\n", req->required_file);
     printf("===================\n");
-    Request *req = get_request_by_fifo();
+
     pthread_mutex_unlock(buffer_mutex);
 
     // Verify if request is for a page or script
     if(!strncmp(req->required_file, CGI_EXPR, strlen(CGI_EXPR))) {
-      execute_script(new_conn, req->required_file);
+      execute_script(req->conn, req->required_file);
     }
     else {
       // Search file with html page and send to client
-      send_page(new_conn, req->required_file);
+      send_page(req->conn, req->required_file);
     }
-
+    printf("conn: %d %s\n", req->conn, req->required_file);
+    close(req->conn);
+    free(req->required_file);
+    free(req);
   }
   return NULL;
 }
@@ -589,6 +584,9 @@ void delete_scheduler_threads() {
 // When program terminates, clean resources
 void terminate() {
   int i;
+
+  //close(new_conn)
+  close(socket_conn);
 
   if(pthread_kill(pipe_thread, SIGUSR1) != 0) {
     printf("Error deleting console thread\n");

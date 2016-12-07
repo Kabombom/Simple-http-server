@@ -25,17 +25,18 @@ void delete_buffer() {
 }
 
 // Add request to buffer
-void add_request_to_buffer(int ready, char *required_file, time_t get_request_time, time_t serve_request_time) {
+void add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time) {
   // Create Request
   Request *new_request = (Request *) malloc(sizeof(Request));
   new_request->ready = ready;
+  new_request->conn = conn;
   new_request->required_file = (char *) malloc(50 *sizeof(char));
   strcpy(new_request->required_file, required_file);
   new_request->get_request_time = get_request_time;
   new_request->serve_request_time = serve_request_time;
 
 
-  printf("Adding request to buffer: %s\n", new_request -> required_file);
+  printf("Adding request to buffer: %s, conn: %d\n", new_request -> required_file, new_request-> conn);
   if (requests_buffer->request == NULL) {
     requests_buffer->request = new_request;
     new_request->next = NULL;
@@ -62,9 +63,19 @@ Request *get_request_by_fifo() {
   Request *temp;
 
   if (current_node != NULL && current_node->next == NULL) {
-    temp = current_node;
+    printf("current_node eq: %s conn: %d\n", requests_buffer->request->required_file, requests_buffer->request->conn);
+    temp = (Request*) malloc(sizeof(Request));
+    temp->ready = current_node->ready;
+    temp->conn = current_node->conn;
+    temp->required_file = (char*)malloc(1024*sizeof(char));
+    strcpy(temp->required_file, current_node->required_file);
+    temp->get_request_time = current_node->get_request_time;
+    temp->serve_request_time = current_node->serve_request_time;
+    temp->prev = NULL;
+    temp->next = NULL;
     free(current_node);
     requests_buffer->request = NULL;
+    printf("temp eq: %s conn: %d\n", temp->required_file, temp->conn);
     return temp;
   }
 
@@ -74,8 +85,16 @@ Request *get_request_by_fifo() {
     current_node = current_node->next;
   }
 
-  printf("Removing oldest request from buffer: %s\n", current_node->required_file);
-  temp = current_node;
+  printf("Removing oldest request from buffer: %s, conn: %d\n", current_node->required_file, current_node->conn);
+  temp = (Request*) malloc(sizeof(Request));
+  temp->ready = current_node->ready;
+  temp->conn = current_node->conn;
+  temp->required_file = (char*)malloc(1024*sizeof(char));
+  strcpy(temp->required_file, current_node->required_file);
+  temp->get_request_time = current_node->get_request_time;
+  temp->serve_request_time = current_node->serve_request_time;
+  temp->prev = NULL;
+  temp->next = NULL;
   previous_node -> next = NULL;
   free(current_node);
   return temp;
