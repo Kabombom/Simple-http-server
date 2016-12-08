@@ -1,5 +1,5 @@
 #include "../includes/scheduler.h"
-
+/*
 // Create semaphores
 void create_semaphores(int number_of_sems) {
   semid = sem_get(number_of_sems, 1); // Creates a new array of semaphores with init_val = 1
@@ -26,9 +26,7 @@ void *scheduler_thread_routine() {
     sem_wait(semid, 0);
     pthread_mutex_lock(&mutex);
     if (strcmp(config->scheduling, "NORMAL") == 0) {
-      printf("before\n");
       Request *request = remove_request_from_buffer();
-      printf("after\n");
       if (request != NULL) {
         printf("request removed: %s\n", request->required_file);
       }
@@ -69,3 +67,4 @@ void delete_scheduler_threads() {
     pthread_join(thread_pool[i], NULL);
   }
 }
+*/

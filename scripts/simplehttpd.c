@@ -49,26 +49,32 @@ int main(int argc, char ** argv) {
     printf("%s\n", req_buf);
     char *filename = get_compressed_filename(req_buf);
     printf("%s\n", filename);
-    int check = compressed_file_is_allowed(filename);
-    printf("%d\n", check );
     printf("----------------------------------------------\n");
 
     // Add request to buffer if there is space in buffer
-    if (requests_buffer->current_size == BUFFER_SIZE) {
-      perror("No buffer space available.\n");
-      terminate();
-      exit(1);
-    }
-    add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
-    sem_post(sem_buffer_empty);
+    if (compressed_file_is_allowed(filename) == 1) {
+      if (requests_buffer->current_size == BUFFER_SIZE) {
+        perror("No buffer space available.\n");
+        terminate();
+        exit(1);
+      }
+      add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
+      sem_post(sem_buffer_empty);
 
-    if (threads_are_avaiable() == 1) {
-      printf("Thread received work\n");
+      if (threads_are_avaiable() == 1) {
+        printf("Thread received work\n");
+      }
+      else {
+        // Nao tenho certeza disto ainda
+        printf("No available threads at the moment\n");
+        send_page(new_conn, "overload.html");
+        close(new_conn);
+      }
     }
     else {
-      printf("No available threads at the moment\n");
-      send_page(new_conn, "overload.html");
-      //close(new_conn);
+      printf("Compressed file is not allowed\n");
+      send_page(new_conn, "not_allowed.html");
+      close(new_conn);
     }
   }
 
