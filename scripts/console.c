@@ -43,7 +43,7 @@ void write_in_pipe(config_struct_aux config) {
   int fd;
   if ((fd = open(PIPE_NAME, O_WRONLY)) < 0) {
     perror("Cannot open pipe for writing: ");
-    exit(0);
+    terminate();
   }
 
   printf("[CLIENT] Sending (%d %s) for adding\n", config.option, config.change);

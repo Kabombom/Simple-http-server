@@ -27,14 +27,14 @@ int main(int argc, char ** argv) {
   // Configure listening port
   // If port given is invalid, exit
   if ((socket_conn = fireup(port)) == -1) {
-    terminate();
+    terminate(); // Error binding to socket
   }
 
   // Serve requests
   while (1) {
     // Accept connection on socket
     // Exit if error occurs while connecting
-    if ( (new_conn = accept(socket_conn, (struct sockaddr *)&client_name, &client_name_len)) == -1 ) {
+    if ((new_conn = accept(socket_conn, (struct sockaddr *)&client_name, &client_name_len)) == -1) {
       printf("Error accepting connection\n");
       terminate();
     }
@@ -45,18 +45,13 @@ int main(int argc, char ** argv) {
     // Process request
     get_request_time = get_request(new_conn);
 
-    printf("----------------------------------------------\n");
-    printf("%s\n", req_buf);
     char *filename = get_compressed_filename(req_buf);
-    printf("%s\n", filename);
-    printf("----------------------------------------------\n");
 
     // Add request to buffer if there is space in buffer
     if (page_or_script(req_buf) == 0 && compressed_file_is_allowed(filename) == 1) {
       if (requests_buffer->current_size == BUFFER_SIZE) {
         perror("No buffer space available.\n");
         terminate();
-        exit(1);
       }
       add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
       sem_post(sem_buffer_empty);
@@ -75,7 +70,6 @@ int main(int argc, char ** argv) {
       if (requests_buffer->current_size == BUFFER_SIZE) {
         perror("No buffer space available.\n");
         terminate();
-        exit(1);
       }
       add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
       sem_post(sem_buffer_empty);
@@ -169,7 +163,7 @@ time_t get_request(int socket) {
   // Currently only supports GET
   if(!found_get) {
     printf("Request from client without a GET\n");
-    exit(1);
+    terminate();
   }
 
   get_request_time = time(NULL);
@@ -426,7 +420,6 @@ void cannot_execute(int socket) {
 void catch_ctrlc(int sig) {
   printf(" Server terminating\n");
   terminate();
-  exit(0);
 }
 
 // Creates shared memory
@@ -434,7 +427,8 @@ void create_shared_memory() {
   shmid = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0777);
   if (shmid < 0) {
     perror("Error creating shared memory.");
-    exit(1);
+    terminate_processes();
+    exit(0);
   }
 }
 
@@ -443,7 +437,8 @@ void attach_shared_memory() {
   config = (config_struct *) shmat(shmid, NULL, 0);
   if (config == (void *) - 1) {
     perror("Error attaching shared memory.");
-    exit(1);
+    terminate_processes();
+    exit(0);
   }
 }
 
@@ -476,7 +471,7 @@ void create_processes() {
     exit(0);
   } else if (statistics_pid == -1){
     perror("Error creating statistics process\n");
-    exit(1);
+    terminate();
   }
 }
 
@@ -563,7 +558,7 @@ void start_pipe() {
   // Creates the named pipe if it doesn't exist yet
   if (mkfifo(PIPE_NAME, O_CREAT|O_EXCL|0600)<0 && (errno != EEXIST)) {
     perror("Cannot create pipe: ");
-    exit(0);
+    terminate();
   }
   printf("Named pipe created.\n");
 }
@@ -574,7 +569,7 @@ void read_from_pipe() {
   int fd, pipe_received_values;
   if ((fd = open(PIPE_NAME, O_RDONLY)) < 0) {
       perror("Cannot open pipe for reading: ");
-      exit(0);
+      terminate();
   }
 
   config_struct_aux config_aux;
@@ -688,10 +683,8 @@ void delete_scheduler_threads() {
 // When program terminates, clean resources
 void terminate() {
   int i;
-
-  //close(new_conn)
+  // close(new_conn)
   close(socket_conn);
-
   if(pthread_kill(pipe_thread, SIGUSR1) != 0) {
     printf("Error deleting console thread\n");
   }
@@ -700,17 +693,16 @@ void terminate() {
       printf("Error deleting thread\n");
     }
   }
-
   // To kill a thread use pthread_kill. But that has to be done before pthread_join, otherwise the thread has already exited
   pthread_join(pipe_thread, NULL);
   for (i = 0; i < config->thread_pool; i++) {
     pthread_join(thread_pool[i], NULL);
   }
-
   //wait(NULL);
   terminate_processes();
   delete_shared_memory();
   delete_buffer();
   delete_semaphores();
   free(thread_pool);
+  exit(0);
 }
