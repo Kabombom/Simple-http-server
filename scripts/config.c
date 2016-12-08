@@ -27,3 +27,13 @@ void configuration_start() {
   return;
 }
 
+void change_configuration_file() {
+  // Read values from file
+  FILE *configuration_file = fopen("./data/config.txt", "w");
+  fprintf(configuration_file, "%d\n", config->serverport);
+  fprintf(configuration_file, "%s\n", config->scheduling);
+  fprintf(configuration_file, "%d\n", config->thread_pool);
+  fprintf(configuration_file, "%s\n", config->allowed);
+  fclose(configuration_file);
+  return;
+}

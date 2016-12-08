@@ -111,7 +111,6 @@ char *get_compressed_filename(char *file_path) {
   return filename;
 }
 
-// Doesn't work with script
 int compressed_file_is_allowed(char *filename) {
   char *ptr = config->allowed;
   char *token;
@@ -489,8 +488,11 @@ void handle_console_comands(config_struct_aux config_aux) {
     case 1:
       printf("Changing type of scheduler...\n");
       strcpy(config->scheduling, config_aux.change);
+      change_configuration_file();
+      printf("Type of scheduler sucefully changed\n");
       break;
     case 2:
+      printf("Changing numberr of threads...\n");
       new_number_of_threads = atoi(config_aux.change);
       int i;
 
@@ -511,10 +513,14 @@ void handle_console_comands(config_struct_aux config_aux) {
         config->thread_pool = new_number_of_threads;
         threads_avaiable = realloc(threads_avaiable, new_number_of_threads);
       }
+      change_configuration_file();
+      printf("Number of threads sucefully changed\n");
       break;
     case 3:
       printf("Changing permited compressed files\n");
       strcpy(config->allowed, config_aux.change);
+      change_configuration_file();
+      printf("Permited compressed files sucefully\n");
       break;
   }
 }

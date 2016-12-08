@@ -25,3 +25,4 @@ typedef struct {
 config_struct *config;
 
 void configuration_start();
+void change_configuration_file();
