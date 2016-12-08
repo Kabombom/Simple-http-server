@@ -45,13 +45,15 @@ int main(int argc, char ** argv) {
     // Process request
     get_request_time = get_request(new_conn);
 
-    // Add request to buffer if there is space in buffer
     printf("----------------------------------------------\n");
     printf("%s\n", req_buf);
     char *filename = get_compressed_filename(req_buf);
     printf("%s\n", filename);
-    //compressed_file_is_allowed(filename);
+    int check = compressed_file_is_allowed(filename);
+    printf("%d\n", check );
     printf("----------------------------------------------\n");
+
+    // Add request to buffer if there is space in buffer
     if (requests_buffer->current_size == BUFFER_SIZE) {
       perror("No buffer space available.\n");
       terminate();
@@ -94,25 +96,19 @@ int threads_are_avaiable() {
 char *get_compressed_filename(char *file_path) {
   int i;
   char *filename = (char *) malloc(100*sizeof(char));
-
-
+  int index = 0;
   for(i = 8; i < strlen(file_path); i++) {
-    filename[i] = file_path[i];
-    printf("%c\n", file_path[i]);
+    filename[index] = file_path[i];
+    index++;
   }
-  printf("............................................\n");
-  printf("%s\n", file_path);
-  printf("%s\n", filename);
-  printf("............................................\n");
-
+  filename[index] = '\0';
   return filename;
 }
+
 // Doesn't work with script
 int compressed_file_is_allowed(char *filename) {
   char *ptr = config->allowed;
   char *token;
-  printf("%s\n", ptr);
-
   token = strtok(ptr, ";");
   while(token != NULL) {
     if (strcmp(token, filename) == 0) {
@@ -120,7 +116,6 @@ int compressed_file_is_allowed(char *filename) {
     }
     token = strtok(NULL, ";");
   }
-
   return 0;
 }
 
