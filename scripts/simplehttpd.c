@@ -427,7 +427,8 @@ void create_shared_memory() {
   shmid = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0777);
   if (shmid < 0) {
     perror("Error creating shared memory.");
-    exit(1);
+    terminate_processes();
+    exit(0);
   }
 }
 
@@ -436,7 +437,8 @@ void attach_shared_memory() {
   config = (config_struct *) shmat(shmid, NULL, 0);
   if (config == (void *) - 1) {
     perror("Error attaching shared memory.");
-    exit(1);
+    terminate_processes();
+    exit(0);
   }
 }
 
