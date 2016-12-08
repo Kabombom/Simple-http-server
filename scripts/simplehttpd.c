@@ -4,6 +4,7 @@ int main(int argc, char ** argv) {
   struct sockaddr_in client_name;
   socklen_t client_name_len = sizeof(client_name);
   int port;
+  time_t get_request_time;
 
   create_processes();
   create_shared_memory();
@@ -16,6 +17,7 @@ int main(int argc, char ** argv) {
   signal(SIGINT, catch_ctrlc);
 
   port = config->serverport;
+  threads_avaiable = (int *) calloc(config->thread_pool, sizeof(int));
 
   create_pipe_thread();
   create_scheduler_threads();
@@ -32,44 +34,101 @@ int main(int argc, char ** argv) {
   while (1) {
     // Accept connection on socket
     // Exit if error occurs while connecting
-    printf("accept\n");
     if ( (new_conn = accept(socket_conn, (struct sockaddr *)&client_name, &client_name_len)) == -1 ) {
       printf("Error accepting connection\n");
       terminate();
     }
-    printf("// accept new_conn: %d\n", new_conn);
-
 
     // Identify new client by address and port
     identify(new_conn);
-    printf("// identify\n");
-
 
     // Process request
-    get_request(new_conn);
-    printf("// get_request\n");
-
+    get_request_time = get_request(new_conn);
 
     // Add request to buffer if there is space in buffer
+    printf("----------------------------------------------\n");
+    printf("%s\n", req_buf);
+    char *filename = get_compressed_filename(req_buf);
+    printf("%s\n", filename);
+    //compressed_file_is_allowed(filename);
+    printf("----------------------------------------------\n");
     if (requests_buffer->current_size == BUFFER_SIZE) {
       perror("No buffer space available.\n");
       terminate();
       exit(1);
     }
-    printf("add_request_to_buffer\n");
-    add_request_to_buffer(0, new_conn, req_buf, time(NULL), time(NULL));
-    printf("//add_request_to_buffer\n");
+    add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
     sem_post(sem_buffer_empty);
-    printf("// post add_request_to_buffer\n");
+
+    if (threads_are_avaiable() == 1) {
+      printf("Thread received work\n");
+    }
+    else {
+      printf("No available threads at the moment\n");
+      send_page(new_conn, "overload.html");
+      //close(new_conn);
+    }
   }
 
   terminate();
 }
 
+// Return 0 for page and 1 for script
+int page_or_script(char *required_file) {
+  if(!strncmp(required_file, CGI_EXPR, strlen(CGI_EXPR))) {
+    return 0;
+  }
+  return 1;
+}
+
+int threads_are_avaiable() {
+  int i;
+  for (i = 0; i < config->thread_pool; i++) {
+    if (threads_avaiable[i] == 0) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+char *get_compressed_filename(char *file_path) {
+  int i;
+  char *filename = (char *) malloc(100*sizeof(char));
+
+
+  for(i = 8; i < strlen(file_path); i++) {
+    filename[i] = file_path[i];
+    printf("%c\n", file_path[i]);
+  }
+  printf("............................................\n");
+  printf("%s\n", file_path);
+  printf("%s\n", filename);
+  printf("............................................\n");
+
+  return filename;
+}
+// Doesn't work with script
+int compressed_file_is_allowed(char *filename) {
+  char *ptr = config->allowed;
+  char *token;
+  printf("%s\n", ptr);
+
+  token = strtok(ptr, ";");
+  while(token != NULL) {
+    if (strcmp(token, filename) == 0) {
+      return 1;
+    }
+    token = strtok(NULL, ";");
+  }
+
+  return 0;
+}
+
 // Processes request from client
-void get_request(int socket) {
+time_t get_request(int socket) {
   int i, j;
   int found_get;
+  time_t get_request_time;
 
   //GET_EXPR it's the get request
   //strncmp compares the strings not more than strlen(GET_EXPR) characters
@@ -93,6 +152,8 @@ void get_request(int socket) {
     printf("Request from client without a GET\n");
     exit(1);
   }
+
+  get_request_time = time(NULL);
   // If no particular page is requested then we consider htdocs/index.html
   if(!strlen(req_buf)) {
     sprintf(req_buf,"index.html");
@@ -102,7 +163,7 @@ void get_request(int socket) {
   printf("get_request: client requested the following page: %s\n",req_buf);
   #endif
 
-  return;
+  return get_request_time;
 }
 
 
@@ -378,7 +439,11 @@ void delete_shared_memory() {
 
 // Statistics process  function
 void statistics() {
-  printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
+  signal(SIGUSR1, print_statistics);
+  while(1) {
+    printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
+    sleep(5);
+  }
 }
 
 // Create necessary processes
@@ -426,14 +491,15 @@ void handle_console_comands(config_struct_aux config_aux) {
       break;
     case 2:
       new_number_of_threads = atoi(config_aux.change);
+      int i;
 
       if(new_number_of_threads > config->thread_pool) {
         thread_pool = realloc(thread_pool, new_number_of_threads);
         create_new_threads(config_aux);
         config->thread_pool = new_number_of_threads;
+        threads_avaiable = realloc(threads_avaiable, new_number_of_threads);
       }
       else if(new_number_of_threads < config->thread_pool) {
-        int i;
         for (i = new_number_of_threads; i < config->thread_pool; i++) {
           if(pthread_kill(thread_pool[i], SIGUSR1) != 0) {
             printf("Error deleting thread\n");
@@ -442,6 +508,7 @@ void handle_console_comands(config_struct_aux config_aux) {
         }
         thread_pool = realloc(thread_pool, new_number_of_threads);
         config->thread_pool = new_number_of_threads;
+        threads_avaiable = realloc(threads_avaiable, new_number_of_threads);
       }
       break;
     case 3:
@@ -521,12 +588,16 @@ void terminate_thread() {
 }
 
 // Threads routine
-void *scheduler_thread_routine() {
+void *scheduler_thread_routine(void *id) {
   signal(SIGUSR1, terminate_thread);
+  int is_page;
+  int thread_id = (int) id;
+
   while(1) {
     sem_wait(sem_buffer_empty);
     pthread_mutex_lock(buffer_mutex);
 
+    threads_avaiable[thread_id] = 1;
     Request *req = get_request_by_fifo();
     printf("temp eq: %s conn: %d\n", req->required_file, req->conn);
     printf("===================\n");
@@ -536,18 +607,25 @@ void *scheduler_thread_routine() {
 
     pthread_mutex_unlock(buffer_mutex);
 
-    // Verify if request is for a page or script
-    if(!strncmp(req->required_file, CGI_EXPR, strlen(CGI_EXPR))) {
+    is_page = page_or_script(req->required_file);
+    if(is_page == 0) {
       execute_script(req->conn, req->required_file);
     }
     else {
-      // Search file with html page and send to client
       send_page(req->conn, req->required_file);
     }
+
     printf("conn: %d %s\n", req->conn, req->required_file);
     close(req->conn);
+    req->serve_request_time = time(NULL);
+    printf("------------------------------------\n");
+    printf("%d\n", (int)req->get_request_time);
+    printf("%d\n", (int)time(NULL));
+    printf("%d\n", (int)req->serve_request_time);
+    printf("------------------------------------\n");
     free(req->required_file);
     free(req);
+    threads_avaiable[thread_id] = 0;
   }
   return NULL;
 }
