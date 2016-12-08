@@ -52,7 +52,26 @@ int main(int argc, char ** argv) {
     printf("----------------------------------------------\n");
 
     // Add request to buffer if there is space in buffer
-    if (compressed_file_is_allowed(filename) == 1) {
+    if (page_or_script(req_buf) == 0 && compressed_file_is_allowed(filename) == 1) {
+      if (requests_buffer->current_size == BUFFER_SIZE) {
+        perror("No buffer space available.\n");
+        terminate();
+        exit(1);
+      }
+      add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
+      sem_post(sem_buffer_empty);
+
+      if (threads_are_avaiable() == 1) {
+        printf("Thread received work\n");
+      }
+      else {
+        // Nao tenho certeza disto ainda
+        printf("No available threads at the moment\n");
+        send_page(new_conn, "overload.html");
+        close(new_conn);
+      }
+    }
+    else if(page_or_script(req_buf) == 1) {
       if (requests_buffer->current_size == BUFFER_SIZE) {
         perror("No buffer space available.\n");
         terminate();
@@ -81,7 +100,7 @@ int main(int argc, char ** argv) {
   terminate();
 }
 
-// Return 0 for page and 1 for script
+// Return 1 for page and 0 for script
 int page_or_script(char *required_file) {
   if(!strncmp(required_file, CGI_EXPR, strlen(CGI_EXPR))) {
     return 0;
