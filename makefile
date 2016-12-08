@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -pthread -Wall -g
-OBJS = scripts/simplehttpd.o scripts/buffer.o scripts/config.o scripts/statistics.o includes/semlib.c
+OBJS = scripts/simplehttpd.o scripts/buffer.o scripts/config.o scripts/statistics.o
 PROG = simplehttpd
 PATH_simplehttpd.c = scripts/simplehttpd.c
 PATH_header.h = includes/header.h

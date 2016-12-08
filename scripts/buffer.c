@@ -25,49 +25,143 @@ void delete_buffer() {
 }
 
 // Add request to buffer
-void add_request_to_buffer(Request *new_request) {
-  printf("Adding request to buffer: %s\n", new_request -> required_file);
+void add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time) {
+  // Create Request
+  Request *new_request = (Request *) malloc(sizeof(Request));
+  new_request->ready = ready;
+  new_request->conn = conn;
+  new_request->required_file = (char *) malloc(50 *sizeof(char));
+  strcpy(new_request->required_file, required_file);
+  new_request->get_request_time = get_request_time;
+  new_request->serve_request_time = serve_request_time;
+
+
+  printf("Adding request to buffer: %s, conn: %d\n", new_request -> required_file, new_request-> conn);
   if (requests_buffer->request == NULL) {
     requests_buffer->request = new_request;
     new_request->next = NULL;
+    new_request->prev = NULL;
     return;
   }
+
+  printf("PASSOU ALELUIAAAAAAAAAAAAAAAAAA\n");
   Request *aux = requests_buffer->request;
-  while(aux -> next != NULL)
-    aux = aux->next;
-  aux->next = new_request;
-  new_request->prev = aux;
+  new_request->next = aux;
+  new_request->prev = NULL;
+  requests_buffer->request = new_request;
   requests_buffer->current_size++;
-  printf("Current size of buffer: %d\n", requests_buffer->current_size );
+  printf("Current size of buffer_ %d\n", requests_buffer->current_size);
 }
 
-// Remove requestr from buffer - FIFO
-Request *remove_request_from_buffer() {
+// FIFO
+Request *get_request_by_fifo() {
   if (requests_buffer->request == NULL) {
     return NULL;
   }
 
-  Request *aux = requests_buffer->request;
+  Request *current_node = requests_buffer->request;
   Request *temp;
 
-  if (aux != NULL && aux->next == NULL) {
-    temp = aux;
-    printf("ENTROU NESTA CENA\n");
-    free(aux);
+  if (current_node != NULL && current_node->next == NULL) {
+    printf("current_node eq: %s conn: %d\n", requests_buffer->request->required_file, requests_buffer->request->conn);
+    temp = (Request*) malloc(sizeof(Request));
+    temp->ready = current_node->ready;
+    temp->conn = current_node->conn;
+    temp->required_file = (char*)malloc(1024*sizeof(char));
+    strcpy(temp->required_file, current_node->required_file);
+    temp->get_request_time = current_node->get_request_time;
+    temp->serve_request_time = current_node->serve_request_time;
+    temp->prev = NULL;
+    temp->next = NULL;
+    free(current_node);
     requests_buffer->request = NULL;
+    printf("temp eq: %s conn: %d\n", temp->required_file, temp->conn);
     return temp;
   }
-  else if (aux != NULL) {
-    printf("Removing oldest request from buffer: %s\n", aux->required_file);
-    while (aux->next != NULL ) {
-      aux = aux->next;
+
+  Request *previous_node = current_node;
+  while (current_node->next != NULL ) {
+    previous_node = current_node;
+    current_node = current_node->next;
+  }
+
+  printf("Removing oldest request from buffer: %s, conn: %d\n", current_node->required_file, current_node->conn);
+  temp = (Request*) malloc(sizeof(Request));
+  temp->ready = current_node->ready;
+  temp->conn = current_node->conn;
+  temp->required_file = (char*)malloc(1024*sizeof(char));
+  strcpy(temp->required_file, current_node->required_file);
+  temp->get_request_time = current_node->get_request_time;
+  temp->serve_request_time = current_node->serve_request_time;
+  temp->prev = NULL;
+  temp->next = NULL;
+  previous_node -> next = NULL;
+  free(current_node);
+  return temp;
+}
+
+Request *get_request_by_static() {
+  if (requests_buffer->request == NULL) {
+    return NULL;
+  }
+
+  char cgi_exp[10];
+  strcpy(cgi_exp, "cgi-bin/");
+  Request *current_node = requests_buffer->request;
+  Request *previous_request = NULL;
+  Request *oldest_static_request = NULL;
+  Request *next_request = NULL;
+
+  if (current_node != NULL && current_node->next == NULL) {
+    if(strncmp(current_node->required_file, cgi_exp, strlen(cgi_exp))) {
+      oldest_static_request = current_node;
+      free(current_node);
+      requests_buffer->request = NULL;
+      return oldest_static_request;
     }
-    temp = aux;
-    printf("OIIIIIIIIIIIIIIIIIIIIII\n");
-    free(aux);
-    return temp;
+    return NULL;
   }
-  printf("DEVOLVE ALI\n");
+
+  Request *previous_node = current_node;
+  if(strncmp(current_node->required_file, cgi_exp, strlen(cgi_exp))) {
+    oldest_static_request = current_node;
+    next_request = current_node->next;
+  }
+  while (current_node->next != NULL ) {
+    previous_node = current_node;
+    current_node = current_node->next;
+
+    if(strncmp(current_node->required_file, cgi_exp, strlen(cgi_exp))) {
+      previous_request = previous_node;
+      oldest_static_request = current_node;
+      next_request = current_node->next;
+    }
+  }
+
+  Request *temp = oldest_static_request;
+  if(strncmp(current_node->required_file, cgi_exp, strlen(cgi_exp))) {
+    oldest_static_request = current_node;
+    previous_node -> next = NULL;
+    printf("Removing oldest static request from buffer: %s\n", oldest_static_request->required_file);
+    free(current_node);
+    return oldest_static_request;
+  }
+  else if(previous_request == NULL) {
+    next_request->prev = NULL;
+    requests_buffer->request = next_request;
+    printf("Removing oldest static request from buffer: %s\n", oldest_static_request->required_file);
+    temp = oldest_static_request;
+    free(temp);
+    return oldest_static_request;
+  }
+  else if(oldest_static_request != NULL){
+    previous_request->next = oldest_static_request->next;
+    next_request->prev = oldest_static_request->prev;
+    printf("Removing oldest static request from buffer: %s\n", oldest_static_request->required_file);
+    temp = oldest_static_request;
+    free(temp);
+    return oldest_static_request;
+  }
   return NULL;
 }
 

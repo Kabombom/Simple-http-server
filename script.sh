@@ -1,5 +1,5 @@
 #!/bin/bash
-max=120
+max=200
 ip=localhost
 filename=dijkstra.html
 port=51000

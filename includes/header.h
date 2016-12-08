@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/ipc.h>
-#include <sys/sem.h>
+#include <semaphore.h>
 #include <sys/shm.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +19,6 @@
 #include <fcntl.h>
 
 // Project header files
-#include "semlib.h"
 #include "config.h"
 #include "buffer.h"
 #include "statistics.h"
@@ -43,7 +42,7 @@
 // Initial functions
 int  fireup(int port);
 void identify(int socket);
-void get_request(int socket);
+time_t get_request(int socket);
 int  read_line(int socket, int n);
 void send_header(int socket);
 void send_page(int socket, char *required_file);
@@ -51,6 +50,12 @@ void execute_script(int socket, char *required_file);
 void not_found(int socket);
 void catch_ctrlc(int);
 void cannot_execute(int socket);
+
+//Utils functions
+int page_or_script();
+int threads_are_avaiable();
+char *get_compressed_filename(char *file_path);
+int compressed_file_is_allowed(char *filename);
 
 //Processes functions
 void statistics();
@@ -92,9 +97,15 @@ int statistics_pid;
 // Shared memory ids
 int shmid;
 
+int *threads_avaiable;
+
 // Semaphores id
-int semid;
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+sem_t *sem_buffer_empty; //If buffer is empty the value of the sem is 0
+sem_t *sem_buffer_full; //If buffer is full the value of the sem is 0
+pthread_mutex_t *buffer_mutex;
 
 pthread_t *thread_pool;
 pthread_t pipe_thread;
+pthread_t scheduler;
+
+Request *last_requests;
