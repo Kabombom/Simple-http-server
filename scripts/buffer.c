@@ -1,6 +1,6 @@
 #include "../includes/buffer.h"
 
-//Utils
+//1 for script, 0 for page
 int is_script(char *filename) {
   char cgi_exp[10];
   strcpy(cgi_exp, "cgi-bin/");
@@ -246,7 +246,11 @@ void swap(Request *a, Request *b) {
   b->serve_request_time = serve_request_time;
 }
 
-/* Bubble sort the given linked lsit */
+// bubbleSort to order linked list based on the time the request was received and
+// based on which type of file it is
+// 0 for static pages
+// 1 for compressed files
+// 3 for regular sort
 void bubbleSort(int script) {
   int swapped;
   Request *ptr1;
