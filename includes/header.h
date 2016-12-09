@@ -101,6 +101,9 @@ int statistics_pid;
 
 // Shared memory ids
 int shmid;
+int shmid_request;
+
+Request *last_request;
 
 int *threads_available;
 
@@ -108,6 +111,7 @@ int *threads_available;
 sem_t *sem_buffer_empty; //If buffer is empty the value of the sem is 0
 sem_t *sem_buffer_full; //If buffer is full the value of the sem is 0
 pthread_mutex_t *buffer_mutex;
+pthread_mutex_t *last_request_mutex;
 
 pthread_t *thread_pool;
 pthread_t pipe_thread;

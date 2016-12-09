@@ -14,4 +14,4 @@ char *src;
 int fd;
 
 void print_statistics();
-void get_request_information(char *type_of_request, char *file, long request_time, long delivery_time);
+void get_request_information(int type_of_request, char *file, long request_time, long delivery_time);

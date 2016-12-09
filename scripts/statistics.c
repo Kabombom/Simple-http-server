@@ -55,12 +55,18 @@ void print_statistics() {
   number_of_static_requests, number_of_compressed_requests, average_static_time, average_compressed_time);
 }
 
-void get_request_information(char *type_of_request, char *filename, long request_time, long delivery_time) {
+void get_request_information(int type_of_request, char *filename, long request_time, long delivery_time) {
   char file[SIZE] = "mmf.log";
   src = (char *) malloc(SIZE * sizeof(char));
   char str[100];
 
-  sprintf(str, "%s %s %ld %ld\n", type_of_request, filename, request_time, delivery_time);
+  char *string_type_of_request = (char*) malloc(1024 * sizeof(char));
+  if (type_of_request == 1)
+    strcpy(string_type_of_request, "static");
+  else
+    strcpy(string_type_of_request, "Compressed");
+
+  sprintf(str, "%s %s %ld %ld\n", string_type_of_request, filename, request_time, delivery_time);
 
 	if ((fd = open(file, O_RDWR)) < 0) {
 		printf("ERROR IN OPEN\n");

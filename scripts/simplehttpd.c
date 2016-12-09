@@ -6,9 +6,9 @@ int main(int argc, char ** argv) {
   int port;
   long get_request_time;
 
-  create_processes();
   create_shared_memory();
   attach_shared_memory();
+  create_processes();
   configuration_start();
   create_buffer();
   create_semaphores();
@@ -50,21 +50,11 @@ int main(int argc, char ** argv) {
       send_page(new_conn, "no_buffer_space_available.html");
       close(new_conn);
     }
-    else if (page_or_script(req_buf) == 0 && compressed_file_is_allowed(filename) == 1) {
+    else if ((page_or_script(req_buf) == 0 && compressed_file_is_allowed(filename) == 1) || page_or_script(req_buf) == 1) {
       if (strcmp(config->scheduling, "STATIC")) {
         add_static_request_to_buffer(0, new_conn, req_buf, get_request_time, get_request_time);
       } else if (strcmp(config->scheduling, "COMPRESSED")) {
         add_compressed_request_to_buffer(0, new_conn, req_buf, get_request_time, get_request_time);
-      } else {
-        add_request_to_buffer(0, new_conn, req_buf, get_request_time, get_request_time);
-      }
-      sem_post(sem_buffer_empty);
-    }
-    else if(page_or_script(req_buf) == 1) {
-      if (strcmp(config->scheduling, "STATIC")) {
-        add_static_request_to_buffer(0, new_conn, req_buf, get_request_time, get_request_time);
-      } else if (strcmp(config->scheduling, "COMPRESSED")) {
-        add_compressed_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
       } else {
         add_request_to_buffer(0, new_conn, req_buf, get_request_time, get_request_time);
       }
@@ -415,7 +405,13 @@ void catch_ctrlc(int sig) {
 void create_shared_memory() {
   shmid = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0777);
   if (shmid < 0) {
-    perror("Error creating shared memory.");
+    printf("Error creating shared memory\n");
+    terminate_processes();
+    exit(0);
+  }
+  shmid_request = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0777);
+  if (shmid_request < 0) {
+    printf("Error creating shared memory for last request\n");
     terminate_processes();
     exit(0);
   }
@@ -425,7 +421,13 @@ void create_shared_memory() {
 void attach_shared_memory() {
   config = (config_struct *) shmat(shmid, NULL, 0);
   if (config == (void *) - 1) {
-    perror("Error attaching shared memory.");
+    printf("Error attaching shared memory\n");
+    terminate_processes();
+    exit(0);
+  }
+  last_request = (Request *) shmat(shmid_request, NULL, 0);
+  if (last_request == (void *) - 1) {
+    printf("Error attaching shared memory of last reqeust\n");
     terminate_processes();
     exit(0);
   }
@@ -436,14 +438,27 @@ void delete_shared_memory() {
   printf("Cleaning shared memory.\n");
   shmdt(config);
   shmctl(shmid, IPC_RMID, NULL);
+  shmdt(last_request);
+  shmctl(shmid_request, IPC_RMID, NULL);
 }
 
 // Statistics process  function
 void statistics() {
   signal(SIGUSR1, print_statistics);
   while(1) {
-    printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
-    sleep(5);
+    if (last_request->required_file != NULL && last_request->ready == 0) {
+      printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
+      //printf("____________________\n");
+      //printf("%ld %ld\n", last_request->get_request_time, last_request->serve_request_time );
+      //printf("____________________\n");
+      //get_request_information(page_or_script(last_request->required_file), last_request->required_file, last_request->get_request_time, last_request->serve_request_time);
+      printf("++++++++++++++++++++++++++++++++\n");
+      printf("%s\n", last_request->required_file);
+      printf("++++++++++++++++++++++++++++++++\n");
+      last_request->ready = 1;
+      free(last_request->required_file);
+      free(last_request);
+    }
   }
 }
 
@@ -584,6 +599,8 @@ void create_semaphores() {
   sem_buffer_empty = sem_open("buffer_empty", O_CREAT|O_EXCL, 0700, 0);
   buffer_mutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(buffer_mutex, NULL);
+  last_request_mutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(last_request_mutex, NULL);
 }
 
 // Delete semaphores
@@ -619,8 +636,6 @@ void *worker(void *id) {
     printf("%s\n", req->required_file);
     printf("===================\n");
 
-    pthread_mutex_unlock(buffer_mutex);
-
     is_page = page_or_script(req->required_file);
     if(is_page == 0) {
       execute_script(req->conn, req->required_file);
@@ -630,15 +645,30 @@ void *worker(void *id) {
     }
 
     close(req->conn);
+
     req->serve_request_time = get_current_time_with_ms();
-    printf("......................................\n");
-    printf("%ld\n", req->get_request_time);
-    printf("%ld\n", req->serve_request_time);
-    printf("......................................\n");
+    last_request = (Request*) malloc(10 * sizeof(Request));
+    last_request->ready = req->ready;
+    last_request->conn = 0;
+    last_request->required_file = (char *) malloc(1024 * sizeof(char));
+    strcpy(last_request->required_file, req->required_file);
+    last_request->get_request_time = req->get_request_time;
+    last_request->serve_request_time = req->serve_request_time;
+
+    printf("****************************************\n");
+    printf("%d\n", last_request->ready);
+    printf("%s\n", last_request->required_file);
+    printf("%ld\n", last_request->get_request_time);
+    printf("%ld\n", last_request->serve_request_time);
+    printf("**************************************\n");
+
+    pthread_mutex_unlock(buffer_mutex);
+
+    free(last_request->required_file);
+    free(last_request);
     free(req->required_file);
     free(req);
     threads_available[thread_id] = 0;
-    get_request_information("oi", req->required_file, req->get_request_time, req->serve_request_time);
   }
   return NULL;
 }
