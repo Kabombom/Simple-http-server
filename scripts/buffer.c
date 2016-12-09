@@ -64,7 +64,7 @@ void add_request_to_buffer(int ready, int conn, char *required_file, long get_re
 }
 
 // Add request according to static priority
-void static_add_request_to_buffer(int ready, int conn, char *required_file, long get_request_time, long serve_request_time) {
+void add_static_request_to_buffer(int ready, int conn, char *required_file, long get_request_time, long serve_request_time) {
   int new_request_is_script = is_script(required_file);
   if(new_request_is_script == 1) {
     add_request_to_buffer(ready, conn, required_file, get_request_time, serve_request_time);
@@ -118,7 +118,7 @@ void static_add_request_to_buffer(int ready, int conn, char *required_file, long
 }
 
 // Add request according to static priority
-void compressed_add_request_to_buffer(int ready, int conn, char *required_file, long get_request_time, long serve_request_time) {
+void add_compressed_request_to_buffer(int ready, int conn, char *required_file, long get_request_time, long serve_request_time) {
   int new_request_is_script = is_script(required_file);
   if(new_request_is_script == 0) {
     add_request_to_buffer(ready, conn, required_file, get_request_time, serve_request_time);
