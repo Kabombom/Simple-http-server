@@ -15,8 +15,11 @@
 #include <string.h>
 #include <signal.h>
 #include <pthread.h>
+#include <sys/time.h>
 #include <time.h>
 #include <fcntl.h>
+#include <inttypes.h>
+#include <math.h>
 
 // Project header files
 #include "config.h"
@@ -42,7 +45,7 @@
 // Initial functions
 int  fireup(int port);
 void identify(int socket);
-time_t get_request(int socket);
+long get_request(int socket);
 int  read_line(int socket, int n);
 void send_header(int socket);
 void send_page(int socket, char *required_file);
@@ -53,7 +56,7 @@ void cannot_execute(int socket);
 
 //Utils functions
 int page_or_script();
-int threads_are_avaiable();
+int threads_are_available();
 char *get_compressed_filename(char *file_path);
 int compressed_file_is_allowed(char *filename);
 
@@ -84,6 +87,8 @@ void delete_scheduler_threads();
 
 void terminate();
 
+long get_current_time_with_ms();
+
 char buf[SIZE_BUF];
 char req_buf[SIZE_BUF];
 char buf_tmp[SIZE_BUF];
@@ -97,7 +102,7 @@ int statistics_pid;
 // Shared memory ids
 int shmid;
 
-int *threads_avaiable;
+int *threads_available;
 
 // Semaphores id
 sem_t *sem_buffer_empty; //If buffer is empty the value of the sem is 0
@@ -109,3 +114,5 @@ pthread_t pipe_thread;
 pthread_t scheduler;
 
 Request *last_requests;
+
+struct timeval tv;

@@ -1,10 +1,8 @@
 #include "../includes/statistics.h"
 
 void print_statistics() {
-
-  char file[SIZE] = "mmf.txt";
-
-
+  /*char file[SIZE] = "mmf.log";
+  char *src = (char *) malloc(SIZE * sizeof(char));
   if ((fd = open(file, O_RDWR | O_TRUNC, FILESEC_MODE)) < 0) {
     fprintf(stderr, "can't creat %s for writing\n", file);
     exit(1);
@@ -14,16 +12,23 @@ void print_statistics() {
     printf("mmap error for input\n");
     exit(1);
   }
-  
+
   printf("Source %s\n", src );
+  char *token;
+  token = strtok(src, "\n");
+  while(token != NULL) {
+    printf("%s\n", token );
+    token = strtok(NULL, "\n");
+  }*/
+
   printf("Número total de pedidos servidos (páginas estáticas): \n"
   "Número total de pedidos servidos (ficheiros comprimidos): \n"
   "Tempo médio para servir um pedido a conteúdo estático não comprimido: \n"
   "Tempo médio para servir um pedido a conteúdo estático comprimido: \n");
 }
 
-void get_request_information(char *type_of_request, char *filename, time_t request_time, time_t delivery_time) {
-  char file[SIZE] = "mmf.txt";
+void get_request_information(char *type_of_request, char *filename, long request_time, long delivery_time) {
+  char file[SIZE] = "mmf.log";
   char *src = (char *) malloc(SIZE * sizeof(char));
   char str[100];
 

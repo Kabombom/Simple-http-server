@@ -25,7 +25,7 @@ void delete_buffer() {
 }
 
 // Add request to buffer
-void add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time) {
+void add_request_to_buffer(int ready, int conn, char *required_file, long get_request_time, long serve_request_time) {
   // Create Request
   Request *new_request = (Request *) malloc(sizeof(Request));
   new_request->ready = ready;
