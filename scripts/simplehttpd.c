@@ -45,46 +45,44 @@ int main(int argc, char ** argv) {
 
     char *filename = get_compressed_filename(req_buf);
 
-    // Add request to buffer if there is space in buffer
-    if (page_or_script(req_buf) == 0 && compressed_file_is_allowed(filename) == 1) {
-      if (requests_buffer->current_size == BUFFER_SIZE) {
-        printf("No buffer space available.\n");
-        send_page(new_conn, "no_buffer_space_available.html");
+    if (requests_buffer->current_size == BUFFER_SIZE) {
+      printf("No buffer space available.\n");
+      send_page(new_conn, "no_buffer_space_available.html");
+      close(new_conn);
+    }
+    else if (page_or_script(req_buf) == 0 && compressed_file_is_allowed(filename) == 1) {
+      if (strcmp(config->scheduling, "STATIC")) {
+        add_static_request_to_buffer(0, new_conn, req_buf, get_request_time, get_request_time);
+      } else if (strcmp(config->scheduling, "COMPRESSED")) {
+        add_compressed_request_to_buffer(0, new_conn, req_buf, get_request_time, get_request_time);
+      } else {
+        add_request_to_buffer(0, new_conn, req_buf, get_request_time, get_request_time);
       }
-      else {
-        add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
-        sem_post(sem_buffer_empty);
-      }
-      if (threads_are_available() == 1) {
-        printf("Thread received work\n");
-      }
-      else {
-        printf("No available threads at the moment\n");
-        send_page(new_conn, "overload.html");
-      }
+      sem_post(sem_buffer_empty);
     }
     else if(page_or_script(req_buf) == 1) {
-      if (requests_buffer->current_size == BUFFER_SIZE) {
-        printf("No buffer space available.\n");
-        send_page(new_conn, "no_buffer_space_available.html");
+      if (strcmp(config->scheduling, "STATIC")) {
+        add_static_request_to_buffer(0, new_conn, req_buf, get_request_time, get_request_time);
+      } else if (strcmp(config->scheduling, "COMPRESSED")) {
+        add_compressed_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
+      } else {
+        add_request_to_buffer(0, new_conn, req_buf, get_request_time, get_request_time);
       }
-      else {
-        add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
-        sem_post(sem_buffer_empty);
-      }
-      if (threads_are_available() == 1) {
-        printf("Thread received work\n");
-      }
-      else {
-        printf("No available threads at the moment\n");
-        send_page(new_conn, "overload.html");
-      }
+      sem_post(sem_buffer_empty);
     }
     else {
       printf("Compressed file is not allowed\n");
       send_page(new_conn, "not_allowed.html");
+      close(new_conn);
     }
-    close(new_conn);
+
+    if (threads_are_available() == 1) {
+      printf("Thread received work\n");
+    } else {
+      printf("No available threads at the moment\n");
+      send_page(new_conn, "overload.html");
+      close(new_conn);
+    }
   }
   terminate();
 }
