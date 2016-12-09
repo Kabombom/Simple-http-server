@@ -68,7 +68,6 @@ int main(int argc, char ** argv) {
         // Nao tenho certeza disto ainda
         printf("No available threads at the moment\n");
         send_page(new_conn, "overload.html");
-        close(new_conn);
       }
     }
     else if(page_or_script(req_buf) == 1) {
@@ -87,14 +86,13 @@ int main(int argc, char ** argv) {
         // Nao tenho certeza disto ainda
         printf("No available threads at the moment\n");
         send_page(new_conn, "overload.html");
-        close(new_conn);
       }
     }
     else {
       printf("Compressed file is not allowed\n");
       send_page(new_conn, "not_allowed.html");
-      close(new_conn);
     }
+    close(new_conn);
   }
 
   terminate();
@@ -689,7 +687,7 @@ void delete_scheduler_threads() {
 void terminate() {
   int i;
 
-  //close(new_conn)
+  //close(new_conn);
   close(socket_conn);
 
   if(pthread_kill(pipe_thread, SIGUSR1) != 0) {

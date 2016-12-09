@@ -1,5 +1,17 @@
 #include "../includes/buffer.h"
 
+//Utils
+int is_script(char *filename) {
+  char cgi_exp[10];
+  strcpy(cgi_exp, "cgi-bin/");
+
+  if(!strncmp(filename, cgi_exp, strlen(cgi_exp))) {
+    return 1;
+  }
+  return 0;
+}
+
+
 // Create Request Buffer
 void create_buffer() {
   requests_buffer = (Buffer *) malloc(sizeof(Buffer));
@@ -40,17 +52,123 @@ void add_request_to_buffer(int ready, int conn, char *required_file, time_t get_
   if (requests_buffer->request == NULL) {
     requests_buffer->request = new_request;
     new_request->next = NULL;
-    new_request->prev = NULL;
     return;
   }
 
   printf("PASSOU ALELUIAAAAAAAAAAAAAAAAAA\n");
   Request *aux = requests_buffer->request;
   new_request->next = aux;
-  new_request->prev = NULL;
   requests_buffer->request = new_request;
   requests_buffer->current_size++;
   printf("Current size of buffer_ %d\n", requests_buffer->current_size);
+}
+
+// Add request according to static priority
+void static_add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time) {
+  int new_request_is_script = is_script(required_file);
+  if(new_request_is_script == 1) {
+    add_request_to_buffer(ready, conn, required_file, get_request_time, serve_request_time);
+    return;
+  }
+
+  // Create Request
+  Request *current_node = requests_buffer->request;
+  Request *new_request = (Request *) malloc(sizeof(Request));
+  new_request->ready = ready;
+  new_request->conn = conn;
+  new_request->required_file = (char *) malloc(50 *sizeof(char));
+  strcpy(new_request->required_file, required_file);
+  new_request->get_request_time = get_request_time;
+  new_request->serve_request_time = serve_request_time;
+
+  printf("Adding request to buffer: %s, conn: %d\n", new_request -> required_file, new_request-> conn);
+  if(current_node == NULL) {
+    requests_buffer->request = new_request;
+    new_request->next = NULL;
+    return;
+  }
+  else if(current_node != NULL && current_node->next == NULL) {
+    if (is_script(current_node->required_file) == 0) {
+      new_request->next = current_node;
+      requests_buffer->request = new_request;
+      requests_buffer->current_size++;
+      return;
+    }
+    else {
+      current_node->next = new_request;
+      new_request->next = NULL;
+      requests_buffer->current_size++;
+      return;
+    }
+  }
+
+  while(current_node->next != NULL && is_script(current_node->next->required_file) != 0) {
+    current_node = current_node->next;
+  }
+  if (current_node->next == NULL) {
+    current_node->next = new_request;
+    new_request->next = NULL;
+    requests_buffer->current_size++;
+    return;
+  }
+  new_request->next = current_node->next;
+  current_node->next = new_request;
+  requests_buffer->current_size++;
+  return;
+}
+
+// Add request according to static priority
+void compressed_add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time) {
+  int new_request_is_script = is_script(required_file);
+  if(new_request_is_script == 0) {
+    add_request_to_buffer(ready, conn, required_file, get_request_time, serve_request_time);
+    return;
+  }
+
+  // Create Request
+  Request *current_node = requests_buffer->request;
+  Request *new_request = (Request *) malloc(sizeof(Request));
+  new_request->ready = ready;
+  new_request->conn = conn;
+  new_request->required_file = (char *) malloc(50 *sizeof(char));
+  strcpy(new_request->required_file, required_file);
+  new_request->get_request_time = get_request_time;
+  new_request->serve_request_time = serve_request_time;
+
+  printf("Adding request to buffer: %s, conn: %d\n", new_request -> required_file, new_request-> conn);
+  if(current_node == NULL) {
+    requests_buffer->request = new_request;
+    new_request->next = NULL;
+    return;
+  }
+  else if(current_node != NULL && current_node->next == NULL) {
+    if (is_script(current_node->required_file) == 1) {
+      new_request->next = current_node;
+      requests_buffer->request = new_request;
+      requests_buffer->current_size++;
+      return;
+    }
+    else {
+      current_node->next = new_request;
+      new_request->next = NULL;
+      requests_buffer->current_size++;
+      return;
+    }
+  }
+
+  while(current_node->next != NULL && is_script(current_node->next->required_file) != 1) {
+    current_node = current_node->next;
+  }
+  if (current_node->next == NULL) {
+    current_node->next = new_request;
+    new_request->next = NULL;
+    requests_buffer->current_size++;
+    return;
+  }
+  new_request->next = current_node->next;
+  current_node->next = new_request;
+  requests_buffer->current_size++;
+  return;
 }
 
 // FIFO
@@ -59,6 +177,7 @@ Request *get_request_by_fifo() {
     return NULL;
   }
 
+  Request *previous_node;
   Request *current_node = requests_buffer->request;
   Request *temp;
 
@@ -71,7 +190,6 @@ Request *get_request_by_fifo() {
     strcpy(temp->required_file, current_node->required_file);
     temp->get_request_time = current_node->get_request_time;
     temp->serve_request_time = current_node->serve_request_time;
-    temp->prev = NULL;
     temp->next = NULL;
     free(current_node);
     requests_buffer->request = NULL;
@@ -79,7 +197,6 @@ Request *get_request_by_fifo() {
     return temp;
   }
 
-  Request *previous_node = current_node;
   while (current_node->next != NULL ) {
     previous_node = current_node;
     current_node = current_node->next;
@@ -93,76 +210,10 @@ Request *get_request_by_fifo() {
   strcpy(temp->required_file, current_node->required_file);
   temp->get_request_time = current_node->get_request_time;
   temp->serve_request_time = current_node->serve_request_time;
-  temp->prev = NULL;
   temp->next = NULL;
-  previous_node -> next = NULL;
+  previous_node->next = NULL;
   free(current_node);
   return temp;
-}
-
-Request *get_request_by_static() {
-  if (requests_buffer->request == NULL) {
-    return NULL;
-  }
-
-  char cgi_exp[10];
-  strcpy(cgi_exp, "cgi-bin/");
-  Request *current_node = requests_buffer->request;
-  Request *previous_request = NULL;
-  Request *oldest_static_request = NULL;
-  Request *next_request = NULL;
-
-  if (current_node != NULL && current_node->next == NULL) {
-    if(strncmp(current_node->required_file, cgi_exp, strlen(cgi_exp))) {
-      oldest_static_request = current_node;
-      free(current_node);
-      requests_buffer->request = NULL;
-      return oldest_static_request;
-    }
-    return NULL;
-  }
-
-  Request *previous_node = current_node;
-  if(strncmp(current_node->required_file, cgi_exp, strlen(cgi_exp))) {
-    oldest_static_request = current_node;
-    next_request = current_node->next;
-  }
-  while (current_node->next != NULL ) {
-    previous_node = current_node;
-    current_node = current_node->next;
-
-    if(strncmp(current_node->required_file, cgi_exp, strlen(cgi_exp))) {
-      previous_request = previous_node;
-      oldest_static_request = current_node;
-      next_request = current_node->next;
-    }
-  }
-
-  Request *temp = oldest_static_request;
-  if(strncmp(current_node->required_file, cgi_exp, strlen(cgi_exp))) {
-    oldest_static_request = current_node;
-    previous_node -> next = NULL;
-    printf("Removing oldest static request from buffer: %s\n", oldest_static_request->required_file);
-    free(current_node);
-    return oldest_static_request;
-  }
-  else if(previous_request == NULL) {
-    next_request->prev = NULL;
-    requests_buffer->request = next_request;
-    printf("Removing oldest static request from buffer: %s\n", oldest_static_request->required_file);
-    temp = oldest_static_request;
-    free(temp);
-    return oldest_static_request;
-  }
-  else if(oldest_static_request != NULL){
-    previous_request->next = oldest_static_request->next;
-    next_request->prev = oldest_static_request->prev;
-    printf("Removing oldest static request from buffer: %s\n", oldest_static_request->required_file);
-    temp = oldest_static_request;
-    free(temp);
-    return oldest_static_request;
-  }
-  return NULL;
 }
 
 void print_buffer() {
@@ -174,4 +225,48 @@ void print_buffer() {
     aux = aux -> next;
     counter++;
   }
+}
+
+/* function to swap data of two nodes a and b*/
+void swap(Request *a, Request *b) {
+  int ready = a->ready;
+  int conn = a->conn;
+  char *required_file = a->required_file;
+  time_t get_request_time = a->get_request_time;
+  time_t serve_request_time = a->serve_request_time;
+  a->ready = b->ready;
+  a->conn = b->conn;
+  a->required_file = b->required_file;
+  a->get_request_time = b->get_request_time;
+  a->serve_request_time = b->serve_request_time;
+  b->ready = ready;
+  b->conn = conn;
+  b->required_file = required_file;
+  b->get_request_time = get_request_time;
+  b->serve_request_time = serve_request_time;
+}
+
+/* Bubble sort the given linked lsit */
+void bubbleSort() {
+  int swapped;
+  Request *ptr1;
+  Request *lptr = NULL;
+
+  /* Checking for empty list */
+  if (requests_buffer->request == NULL || requests_buffer->request->next)
+    return;
+
+  do {
+    swapped = 0;
+    ptr1 = requests_buffer->request;
+
+    while (ptr1->next != lptr) {
+      if (ptr1->ready > ptr1->next->ready) { 
+        swap(ptr1, ptr1->next);
+        swapped = 1;
+      }
+      ptr1 = ptr1->next;
+    }
+    lptr = ptr1;
+  } while (swapped);
 }

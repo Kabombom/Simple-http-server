@@ -21,7 +21,6 @@ typedef struct request {
   char *required_file;
   time_t get_request_time;
 	time_t serve_request_time;
-  struct request *prev;
   struct request *next;
 } Request;
 
@@ -35,7 +34,9 @@ Buffer *requests_buffer;
 void create_buffer();
 void delete_buffer();
 void add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time);
+void static_add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time);
+void compressed_add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time);
 Request *get_request_by_fifo();
-Request *get_request_by_static();
-Request *get_request_by_compressed();
 void print_buffer();
+void swap(Request *a, Request *b);
+void bubbleSort();
