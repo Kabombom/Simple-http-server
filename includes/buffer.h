@@ -19,8 +19,9 @@ typedef struct request {
   int ready;
   int conn;
   char *required_file;
-  time_t get_request_time;
-	time_t serve_request_time;
+  long get_request_time;
+	long serve_request_time;
+  struct request *prev;
   struct request *next;
 } Request;
 
@@ -34,9 +35,9 @@ Buffer *requests_buffer;
 int is_script(char *filename);
 void create_buffer();
 void delete_buffer();
-void add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time);
-void static_add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time);
-void compressed_add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time);
+void add_request_to_buffer(int ready, int conn, char *required_file, long get_request_time, long serve_request_time);
+void static_add_request_to_buffer(int ready, int conn, char *required_file, long get_request_time, long serve_request_time);
+void compressed_add_request_to_buffer(int ready, int conn, char *required_file, long get_request_time, long serve_request_time);
 Request *get_request_by_fifo();
 void print_buffer();
 void swap(Request *a, Request *b);

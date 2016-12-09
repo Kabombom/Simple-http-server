@@ -37,7 +37,7 @@ void delete_buffer() {
 }
 
 // Add request to buffer
-void add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time) {
+void add_request_to_buffer(int ready, int conn, char *required_file, long get_request_time, long serve_request_time) {
   // Create Request
   Request *new_request = (Request *) malloc(sizeof(Request));
   new_request->ready = ready;
@@ -64,7 +64,7 @@ void add_request_to_buffer(int ready, int conn, char *required_file, time_t get_
 }
 
 // Add request according to static priority
-void static_add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time) {
+void static_add_request_to_buffer(int ready, int conn, char *required_file, long get_request_time, long serve_request_time) {
   int new_request_is_script = is_script(required_file);
   if(new_request_is_script == 1) {
     add_request_to_buffer(ready, conn, required_file, get_request_time, serve_request_time);
@@ -118,7 +118,7 @@ void static_add_request_to_buffer(int ready, int conn, char *required_file, time
 }
 
 // Add request according to static priority
-void compressed_add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time) {
+void compressed_add_request_to_buffer(int ready, int conn, char *required_file, long get_request_time, long serve_request_time) {
   int new_request_is_script = is_script(required_file);
   if(new_request_is_script == 0) {
     add_request_to_buffer(ready, conn, required_file, get_request_time, serve_request_time);
