@@ -4,7 +4,7 @@ int main(int argc, char ** argv) {
   struct sockaddr_in client_name;
   socklen_t client_name_len = sizeof(client_name);
   int port;
-  time_t get_request_time;
+  long get_request_time;
 
   create_processes();
   create_shared_memory();
@@ -17,7 +17,7 @@ int main(int argc, char ** argv) {
   signal(SIGINT, catch_ctrlc);
 
   port = config->serverport;
-  threads_avaiable = (int *) calloc(config->thread_pool, sizeof(int));
+  threads_available = (int *) calloc(config->thread_pool, sizeof(int));
 
   create_pipe_thread();
   create_scheduler_threads();
@@ -27,7 +27,7 @@ int main(int argc, char ** argv) {
   // Configure listening port
   // If port given is invalid, exit
   if ((socket_conn = fireup(port)) == -1) {
-    terminate(); // Error binding to socket
+    terminate();
   }
 
   // Serve requests
@@ -50,17 +50,18 @@ int main(int argc, char ** argv) {
     // Add request to buffer if there is space in buffer
     if (page_or_script(req_buf) == 0 && compressed_file_is_allowed(filename) == 1) {
       if (requests_buffer->current_size == BUFFER_SIZE) {
-        perror("No buffer space available.\n");
-        terminate();
+        printf("No buffer space available.\n");
+        send_page(new_conn, "no_buffer_space_available.html");
+        close(new_conn);
       }
+
       add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
       sem_post(sem_buffer_empty);
 
-      if (threads_are_avaiable() == 1) {
+      if (threads_are_available() == 1) {
         printf("Thread received work\n");
       }
       else {
-        // Nao tenho certeza disto ainda
         printf("No available threads at the moment\n");
         send_page(new_conn, "overload.html");
         close(new_conn);
@@ -74,11 +75,10 @@ int main(int argc, char ** argv) {
       add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
       sem_post(sem_buffer_empty);
 
-      if (threads_are_avaiable() == 1) {
+      if (threads_are_available() == 1) {
         printf("Thread received work\n");
       }
       else {
-        // Nao tenho certeza disto ainda
         printf("No available threads at the moment\n");
         send_page(new_conn, "overload.html");
         close(new_conn);
@@ -94,6 +94,12 @@ int main(int argc, char ** argv) {
   terminate();
 }
 
+
+long get_current_time_with_ms() {
+  gettimeofday(&tv, NULL);
+  return tv.tv_sec*1000 + tv.tv_usec/1000;
+}
+
 // Return 1 for page and 0 for script
 int page_or_script(char *required_file) {
   if(!strncmp(required_file, CGI_EXPR, strlen(CGI_EXPR))) {
@@ -102,10 +108,10 @@ int page_or_script(char *required_file) {
   return 1;
 }
 
-int threads_are_avaiable() {
+int threads_are_available() {
   int i;
   for (i = 0; i < config->thread_pool; i++) {
-    if (threads_avaiable[i] == 0) {
+    if (threads_available[i] == 0) {
       return 1;
     }
   }
@@ -138,13 +144,12 @@ int compressed_file_is_allowed(char *filename) {
 }
 
 // Processes request from client
-time_t get_request(int socket) {
+long get_request(int socket) {
   int i, j;
   int found_get;
-  time_t get_request_time;
 
-  //GET_EXPR it's the get request
-  //strncmp compares the strings not more than strlen(GET_EXPR) characters
+  // GET_EXPR it's the get request
+  // strncmp compares the strings not more than strlen(GET_EXPR) characters
   found_get = 0;
   while (read_line(socket, SIZE_BUF) > 0) {
     if(!strncmp(buf, GET_EXPR, strlen(GET_EXPR))) {
@@ -166,7 +171,6 @@ time_t get_request(int socket) {
     terminate();
   }
 
-  get_request_time = time(NULL);
   // If no particular page is requested then we consider htdocs/index.html
   if(!strlen(req_buf)) {
     sprintf(req_buf,"index.html");
@@ -176,7 +180,7 @@ time_t get_request(int socket) {
   printf("get_request: client requested the following page: %s\n",req_buf);
   #endif
 
-  return get_request_time;
+  return get_current_time_with_ms();
 }
 
 
@@ -251,7 +255,6 @@ void execute_script(int socket, char *required_file) {
   return;
 }
 
-
 // Send html page to client
 void send_page(int socket, char *required_file) {
   FILE * fp;
@@ -282,7 +285,6 @@ void send_page(int socket, char *required_file) {
     // Close file
     fclose(fp);
   }
-
   return;
 }
 
@@ -320,7 +322,6 @@ int read_line(int socket,int n) {
 
   n_read = 0;
   not_eol = 1;
-
 
   while (n_read<n && not_eol) {
     ret = read(socket, &new_char, sizeof(char));
@@ -466,7 +467,6 @@ void create_processes() {
 
   if ((statistics_pid = fork()) == 0) {
     statistics_pid = getpid();
-    printf("%d\n", statistics_pid);
     statistics();
     exit(0);
   } else if (statistics_pid == -1){
@@ -503,10 +503,10 @@ void handle_console_comands(config_struct_aux config_aux) {
       printf("Changing type of scheduler...\n");
       strcpy(config->scheduling, config_aux.change);
       change_configuration_file();
-      printf("Type of scheduler sucefully changed\n");
+      printf("Type of scheduler successfully changed\n");
       break;
     case 2:
-      printf("Changing numberr of threads...\n");
+      printf("Changing number of threads...\n");
       new_number_of_threads = atoi(config_aux.change);
       int i;
 
@@ -514,7 +514,7 @@ void handle_console_comands(config_struct_aux config_aux) {
         thread_pool = realloc(thread_pool, new_number_of_threads);
         create_new_threads(config_aux);
         config->thread_pool = new_number_of_threads;
-        threads_avaiable = realloc(threads_avaiable, new_number_of_threads);
+        threads_available = realloc(threads_available, new_number_of_threads);
       }
       else if(new_number_of_threads < config->thread_pool) {
         for (i = new_number_of_threads; i < config->thread_pool; i++) {
@@ -525,16 +525,16 @@ void handle_console_comands(config_struct_aux config_aux) {
         }
         thread_pool = realloc(thread_pool, new_number_of_threads);
         config->thread_pool = new_number_of_threads;
-        threads_avaiable = realloc(threads_avaiable, new_number_of_threads);
+        threads_available = realloc(threads_available, new_number_of_threads);
       }
       change_configuration_file();
-      printf("Number of threads sucefully changed\n");
+      printf("Number of threads successfully changed\n");
       break;
     case 3:
       printf("Changing permited compressed files\n");
       strcpy(config->allowed, config_aux.change);
       change_configuration_file();
-      printf("Permited compressed files sucefully\n");
+      printf("Permitted compressed files successfully\n");
       break;
   }
 }
@@ -612,17 +612,17 @@ void terminate_thread() {
 void *scheduler_thread_routine(void *id) {
   signal(SIGUSR1, terminate_thread);
   int is_page;
-  int thread_id = (int) id;
+  int thread_id = (int)id;
 
   while(1) {
     sem_wait(sem_buffer_empty);
     pthread_mutex_lock(buffer_mutex);
 
-    threads_avaiable[thread_id] = 1;
+    threads_available[thread_id] = 1;
     Request *req = get_request_by_fifo();
     printf("temp eq: %s conn: %d\n", req->required_file, req->conn);
     printf("===================\n");
-    printf("Thread that responded %d\n", (int)pthread_self());
+    printf("Thread that responded %d\n", (int)thread_id);
     printf("%s\n", req->required_file);
     printf("===================\n");
 
@@ -636,17 +636,16 @@ void *scheduler_thread_routine(void *id) {
       send_page(req->conn, req->required_file);
     }
 
-    printf("conn: %d %s\n", req->conn, req->required_file);
     close(req->conn);
-    req->serve_request_time = time(NULL);
-    printf("------------------------------------\n");
-    printf("%d\n", (int)req->get_request_time);
-    printf("%d\n", (int)time(NULL));
-    printf("%d\n", (int)req->serve_request_time);
-    printf("------------------------------------\n");
+    req->serve_request_time = get_current_time_with_ms();
+    printf("......................................\n");
+    printf("%ld\n", req->get_request_time);
+    printf("%ld\n", req->serve_request_time);
+    printf("......................................\n");
     free(req->required_file);
     free(req);
-    threads_avaiable[thread_id] = 0;
+    threads_available[thread_id] = 0;
+    get_request_information("oi", req->required_file, req->get_request_time, req->serve_request_time);
   }
   return NULL;
 }
@@ -683,7 +682,7 @@ void delete_scheduler_threads() {
 // When program terminates, clean resources
 void terminate() {
   int i;
-  // close(new_conn)
+  //close(new_conn);
   close(socket_conn);
   if(pthread_kill(pipe_thread, SIGUSR1) != 0) {
     printf("Error deleting console thread\n");

@@ -7,11 +7,11 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <time.h>
+#include <string.h>
 
 #define SIZE 10000
 char *src;
 int fd;
 
-
 void print_statistics();
-void get_request_information(char *type_of_request, char *file, time_t request_time, time_t delivery_time);
+void get_request_information(char *type_of_request, char *file, long request_time, long delivery_time);
