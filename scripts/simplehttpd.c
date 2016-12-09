@@ -10,17 +10,15 @@ int main(int argc, char ** argv) {
   create_shared_memory();
   attach_shared_memory();
   configuration_start();
-
   create_buffer();
   create_semaphores();
+  create_pipe_thread();
+  create_scheduler_threads();
 
   signal(SIGINT, catch_ctrlc);
 
   port = config->serverport;
   threads_available = (int *) calloc(config->thread_pool, sizeof(int));
-
-  create_pipe_thread();
-  create_scheduler_threads();
 
   printf("Listening for HTTP requests on port %d\n", port);
 
@@ -52,12 +50,11 @@ int main(int argc, char ** argv) {
       if (requests_buffer->current_size == BUFFER_SIZE) {
         printf("No buffer space available.\n");
         send_page(new_conn, "no_buffer_space_available.html");
-        close(new_conn);
       }
-
-      add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
-      sem_post(sem_buffer_empty);
-
+      else {
+        add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
+        sem_post(sem_buffer_empty);
+      }
       if (threads_are_available() == 1) {
         printf("Thread received work\n");
       }
@@ -68,12 +65,13 @@ int main(int argc, char ** argv) {
     }
     else if(page_or_script(req_buf) == 1) {
       if (requests_buffer->current_size == BUFFER_SIZE) {
-        perror("No buffer space available.\n");
-        terminate();
+        printf("No buffer space available.\n");
+        send_page(new_conn, "no_buffer_space_available.html");
       }
-      add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
-      sem_post(sem_buffer_empty);
-
+      else {
+        add_request_to_buffer(0, new_conn, req_buf, get_request_time, time(NULL));
+        sem_post(sem_buffer_empty);
+      }
       if (threads_are_available() == 1) {
         printf("Thread received work\n");
       }
@@ -88,7 +86,6 @@ int main(int argc, char ** argv) {
     }
     close(new_conn);
   }
-
   terminate();
 }
 
@@ -171,7 +168,7 @@ long get_request(int socket) {
 
   // If no particular page is requested then we consider htdocs/index.html
   if(!strlen(req_buf)) {
-    sprintf(req_buf,"index.html");
+    sprintf(req_buf, "index.html");
   }
 
   #if DEBUG
@@ -231,20 +228,15 @@ void execute_script(int socket, char *required_file) {
   else {
     run_unzip = system(command);
     char *filename = get_filename(buf_tmp);
-
     // Page found, send to client
     // First send HTTP header back to client
     send_header(socket);
-
     printf("send_page: sending page %s to client\n", filename);
-
     fclose(fp);
     fp = fopen(filename, "rt");
-
     while(fgets(filename, 100, fp)) {
       send(socket, filename, strlen(filename), 0);
     }
-
     // Close file
     fclose(fp);
   }
@@ -257,7 +249,7 @@ void execute_script(int socket, char *required_file) {
 void send_page(int socket, char *required_file) {
   FILE * fp;
 
-  // Searchs for page in directory htdocs
+  // Searches for page in directory htdocs
   sprintf(buf_tmp,"htdocs/%s", required_file);
 
   #if DEBUG
@@ -441,14 +433,12 @@ void attach_shared_memory() {
   }
 }
 
-
 // Delete shared memory
 void delete_shared_memory() {
   printf("Cleaning shared memory.\n");
   shmdt(config);
   shmctl(shmid, IPC_RMID, NULL);
 }
-
 
 // Statistics process  function
 void statistics() {
@@ -545,15 +535,14 @@ void *thread_pipe_routine() {
 }
 
 void create_pipe_thread() {
-  // Create threads
   if (pthread_create(&pipe_thread, NULL, thread_pipe_routine, (void *)25) != 0) {
     perror("Error creating thread");
   }
 }
 
+// Create named pipe if it doesn't exist yet
 void start_pipe() {
   printf("----STARTING PIPE----\n");
-  // Creates the named pipe if it doesn't exist yet
   if (mkfifo(PIPE_NAME, O_CREAT|O_EXCL|0600)<0 && (errno != EEXIST)) {
     perror("Cannot create pipe: ");
     terminate();
@@ -561,15 +550,14 @@ void start_pipe() {
   printf("Named pipe created.\n");
 }
 
+// Open pipe for reading
 void read_from_pipe() {
   printf("----READING PIPE----\n");
-  // Opens the pipe for reading
   int fd, pipe_received_values;
   if ((fd = open(PIPE_NAME, O_RDONLY)) < 0) {
       perror("Cannot open pipe for reading: ");
       terminate();
   }
-
   config_struct_aux config_aux;
   while(1) {
     if((pipe_received_values = read(fd, &config_aux, sizeof(config_struct_aux))) > 0) {

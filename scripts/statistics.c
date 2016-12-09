@@ -1,46 +1,74 @@
 #include "../includes/statistics.h"
 
 void print_statistics() {
-  /*char file[SIZE] = "mmf.log";
-  char *src = (char *) malloc(SIZE * sizeof(char));
-  if ((fd = open(file, O_RDWR | O_TRUNC, FILESEC_MODE)) < 0) {
-    fprintf(stderr, "can't creat %s for writing\n", file);
-    exit(1);
+  long number_of_static_requests = 0;
+  long number_of_compressed_requests = 0;
+  long average_static_time = 0;
+  long average_compressed_time = 0;
+
+  char str[] = "static index.html 1481306872087 1481306872088\nstatic index.html 1481306872090 1481306872100\ncompressed index.html 1481306872087 1481306872090\ncompressed index.html 1481306872090 1481306872100";
+  char *end_str;
+  char *token = strtok_r(str, "\n", &end_str);
+  int index;
+
+  while (token != NULL) {
+    // printf("%s\n", token );
+    index = 0;
+    int is_static = 0;
+    long beg_time;
+    char *end_token;
+    char *token2 = strtok_r(token, " ", &end_token);
+    while (token2 != NULL) {
+      // printf("%s\n", token2 );
+      if (index == 0) {
+        if (strcmp(token2, "static") == 0) {
+          number_of_static_requests++;
+          is_static = 1;
+        }
+        else
+          number_of_compressed_requests++;
+      }
+      else if (index == 2) {
+        beg_time = atol(token2);
+      }
+      else if (index == 3) {
+        if (is_static) {
+          average_static_time += atol(token2) - beg_time;
+        }
+        else
+          average_compressed_time += atol(token2) - beg_time;
+      }
+      index++;
+      token2 = strtok_r(NULL, " ", &end_token);
+    }
+    token = strtok_r(NULL, "\n", &end_str);
   }
+  if (number_of_static_requests != 0)
+    average_static_time = average_static_time / number_of_static_requests;
+  if (number_of_compressed_requests != 0)
+    average_compressed_time = average_compressed_time / number_of_compressed_requests;
 
-  if ((src = mmap ((caddr_t)0, SIZE, PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, fd, 0)) == (caddr_t) -1) {
-    printf("mmap error for input\n");
-    exit(1);
-  }
-
-  printf("Source %s\n", src );
-  char *token;
-  token = strtok(src, "\n");
-  while(token != NULL) {
-    printf("%s\n", token );
-    token = strtok(NULL, "\n");
-  }*/
-
-  printf("Número total de pedidos servidos (páginas estáticas): \n"
-  "Número total de pedidos servidos (ficheiros comprimidos): \n"
-  "Tempo médio para servir um pedido a conteúdo estático não comprimido: \n"
-  "Tempo médio para servir um pedido a conteúdo estático comprimido: \n");
+  printf("Número total de pedidos servidos (páginas estáticas): %ld \n"
+  "Número total de pedidos servidos (ficheiros comprimidos): %ld \n"
+  "Tempo médio para servir um pedido a conteúdo estático não comprimido: %ld ms\n"
+  "Tempo médio para servir um pedido a conteúdo estático comprimido: %ld ms\n",
+  number_of_static_requests, number_of_compressed_requests, average_static_time, average_compressed_time);
 }
 
 void get_request_information(char *type_of_request, char *filename, long request_time, long delivery_time) {
   char file[SIZE] = "mmf.log";
-  char *src = (char *) malloc(SIZE * sizeof(char));
+  src = (char *) malloc(SIZE * sizeof(char));
   char str[100];
 
   sprintf(str, "%s %s %ld %ld\n", type_of_request, filename, request_time, delivery_time);
 
-	if ((fd = open(file, O_RDWR | O_CREAT | O_TRUNC, FILESEC_MODE)) < 0) {
-		fprintf(stderr, "can't creat %s for writing\n", file);
+	if ((fd = open(file, O_RDWR)) < 0) {
+		printf("ERROR IN OPEN\n");
 		exit(1);
 	}
 
-  if ((src = mmap ((caddr_t)0, SIZE, PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, fd, 0)) == (caddr_t) -1) {
-    printf("mmap error for input\n");
+  if ((src = mmap ((caddr_t)0, SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED, fd, 0)) == (caddr_t) -1) {
+    printf("ERROR IN NMAP\n");
     exit(1);
   }
 
