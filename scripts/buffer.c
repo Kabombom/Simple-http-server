@@ -270,13 +270,13 @@ void bubbleSort(int script) {
           swapped = 1;
         }
         else if (ptr1_is_script == 1 && ptr1_next_is_script == 1) {
-          if (ptr1->ready > ptr1->next->ready) {
+          if (ptr1->get_request_time > ptr1->next->get_request_time) {
             swap(ptr1, ptr1->next);
             swapped = 1;
           }
         }
         else if (ptr1_is_script == 0) {
-          if (ptr1->ready > ptr1->next->ready) {
+          if (ptr1->get_request_time > ptr1->next->get_request_time) {
             swap(ptr1, ptr1->next);
             swapped = 1;
           }
@@ -301,13 +301,13 @@ void bubbleSort(int script) {
           swapped = 1;
         }
         else if (ptr1_is_script == 0 && ptr1_next_is_script == 0) {
-          if (ptr1->ready > ptr1->next->ready) { 
+          if (ptr1->get_request_time > ptr1->next->get_request_time) {
             swap(ptr1, ptr1->next);
             swapped = 1;
           }
         }
         else if (ptr1_is_script == 1) {
-          if (ptr1->ready > ptr1->next->ready) {
+          if (ptr1->get_request_time > ptr1->next->get_request_time) {
             swap(ptr1, ptr1->next);
             swapped = 1;
           }
@@ -323,7 +323,7 @@ void bubbleSort(int script) {
     ptr1 = requests_buffer->request;
 
     while (ptr1->next != lptr) {
-      if (ptr1->ready > ptr1->next->ready) {
+      if (ptr1->get_request_time > ptr1->next->get_request_time) {
         swap(ptr1, ptr1->next);
         swapped = 1;
       }
