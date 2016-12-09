@@ -1,6 +1,6 @@
 #include "../includes/buffer.h"
 
-//Utils
+//1 for script, 0 for page
 int is_script(char *filename) {
   char cgi_exp[10];
   strcpy(cgi_exp, "cgi-bin/");
@@ -52,6 +52,7 @@ void add_request_to_buffer(int ready, int conn, char *required_file, long get_re
   if (requests_buffer->request == NULL) {
     requests_buffer->request = new_request;
     new_request->next = NULL;
+    requests_buffer->current_size++;
     return;
   }
 
@@ -85,6 +86,7 @@ void add_static_request_to_buffer(int ready, int conn, char *required_file, long
   if(current_node == NULL) {
     requests_buffer->request = new_request;
     new_request->next = NULL;
+    requests_buffer->current_size++;
     return;
   }
   else if(current_node != NULL && current_node->next == NULL) {
@@ -193,6 +195,7 @@ Request *get_request_by_fifo() {
     temp->next = NULL;
     free(current_node);
     requests_buffer->request = NULL;
+    requests_buffer->current_size--;
     printf("temp eq: %s conn: %d\n", temp->required_file, temp->conn);
     return temp;
   }
@@ -212,6 +215,7 @@ Request *get_request_by_fifo() {
   temp->serve_request_time = current_node->serve_request_time;
   temp->next = NULL;
   previous_node->next = NULL;
+  requests_buffer->current_size--;
   free(current_node);
   return temp;
 }
@@ -246,7 +250,11 @@ void swap(Request *a, Request *b) {
   b->serve_request_time = serve_request_time;
 }
 
-/* Bubble sort the given linked lsit */
+// bubbleSort to order linked list based on the time the request was received and
+// based on which type of file it is
+// 0 for static pages
+// 1 for compressed files
+// 3 for regular sort
 void bubbleSort(int script) {
   int swapped;
   Request *ptr1;

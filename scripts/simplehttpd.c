@@ -489,6 +489,15 @@ void handle_console_comands(config_struct_aux config_aux) {
       printf("Changing type of scheduler...\n");
       strcpy(config->scheduling, config_aux.change);
       change_configuration_file();
+      if (strcmp(config_aux.change, "STATIC")) {
+        bubbleSort(0);
+      }
+      else if (strcmp(config_aux.change, "COMPRESSED")) {
+        bubbleSort(1);
+      }
+      else {
+        bubbleSort(3);
+      }
       printf("Type of scheduler successfully changed\n");
       break;
     case 2:
