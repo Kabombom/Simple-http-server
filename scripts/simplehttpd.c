@@ -488,7 +488,7 @@ void create_new_threads(config_struct_aux config_aux) {
   // Create threads
   for (i = config->thread_pool; i < atoi(config_aux.change); i++) {
     ids[i] = i;
-    if (pthread_create(&thread_pool[i], NULL, scheduler_thread_routine, (void *)ids[i]) != 0) {
+    if (pthread_create(&thread_pool[i], NULL, worker, (void *)ids[i]) != 0) {
       perror("Error creating thread");
     }
   }
@@ -607,7 +607,7 @@ void terminate_thread() {
 }
 
 // Threads routine
-void *scheduler_thread_routine(void *id) {
+void *worker(void *id) {
   signal(SIGUSR1, terminate_thread);
   int is_page;
   int thread_id = (int)id;
@@ -662,7 +662,7 @@ void create_scheduler_threads() {
   // Create threads
   for (i = 0; i < config->thread_pool; i++) {
     ids[i] = i;
-    if (pthread_create(&thread_pool[i], NULL, scheduler_thread_routine, (void *)ids[i]) != 0) {
+    if (pthread_create(&thread_pool[i], NULL, worker, (void *)ids[i]) != 0) {
       perror("Error creating thread");
     }
   }
