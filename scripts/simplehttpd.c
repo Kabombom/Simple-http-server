@@ -64,7 +64,6 @@ int main(int argc, char ** argv) {
       else {
         printf("No available threads at the moment\n");
         send_page(new_conn, "overload.html");
-        close(new_conn);
       }
     }
     else if(page_or_script(req_buf) == 1) {
@@ -81,14 +80,13 @@ int main(int argc, char ** argv) {
       else {
         printf("No available threads at the moment\n");
         send_page(new_conn, "overload.html");
-        close(new_conn);
       }
     }
     else {
       printf("Compressed file is not allowed\n");
       send_page(new_conn, "not_allowed.html");
-      close(new_conn);
     }
+    close(new_conn);
   }
 
   terminate();
@@ -490,7 +488,7 @@ void create_new_threads(config_struct_aux config_aux) {
   // Create threads
   for (i = config->thread_pool; i < atoi(config_aux.change); i++) {
     ids[i] = i;
-    if (pthread_create(&thread_pool[i], NULL, scheduler_thread_routine, (void *)ids[i]) != 0) {
+    if (pthread_create(&thread_pool[i], NULL, worker, (void *)ids[i]) != 0) {
       perror("Error creating thread");
     }
   }
@@ -609,7 +607,7 @@ void terminate_thread() {
 }
 
 // Threads routine
-void *scheduler_thread_routine(void *id) {
+void *worker(void *id) {
   signal(SIGUSR1, terminate_thread);
   int is_page;
   int thread_id = (int)id;
@@ -664,7 +662,7 @@ void create_scheduler_threads() {
   // Create threads
   for (i = 0; i < config->thread_pool; i++) {
     ids[i] = i;
-    if (pthread_create(&thread_pool[i], NULL, scheduler_thread_routine, (void *)ids[i]) != 0) {
+    if (pthread_create(&thread_pool[i], NULL, worker, (void *)ids[i]) != 0) {
       perror("Error creating thread");
     }
   }
@@ -682,6 +680,7 @@ void delete_scheduler_threads() {
 // When program terminates, clean resources
 void terminate() {
   int i;
+
   //close(new_conn);
   close(socket_conn);
   if(pthread_kill(pipe_thread, SIGUSR1) != 0) {

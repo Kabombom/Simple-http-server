@@ -81,7 +81,7 @@ void read_from_pipe();
 void create_semaphores();
 void delete_semaphores();
 void terminate_thread();
-void *scheduler_thread_routine();
+void *worker();
 void create_scheduler_threads();
 void delete_scheduler_threads();
 

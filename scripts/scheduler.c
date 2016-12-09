@@ -21,7 +21,7 @@ void terminate_thread() {
 }
 
 // Threads routine
-void *scheduler_thread_routine() {
+void *worker() {
   while(1) {
     sem_wait(semid, 0);
     pthread_mutex_lock(&mutex);
@@ -53,7 +53,7 @@ void create_scheduler_threads() {
   // Create threads
   for (i = 0; i < config->thread_pool; i++) {
     ids[i] = i;
-    if (pthread_create(&thread_pool[i], NULL, scheduler_thread_routine, (void *)ids[i]) != 0) {
+    if (pthread_create(&thread_pool[i], NULL, worker, (void *)ids[i]) != 0) {
       perror("Error creating thread");
     }
   }

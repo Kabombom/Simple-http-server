@@ -17,7 +17,7 @@ pthread_t *thread_pool;
 
 void delete_scheduler_threads();
 void terminate_thread();
-void *scheduler_thread_routine();
+void *worker();
 void create_scheduler_threads();
 
 void create_semaphores(int number_of_sems);
