@@ -247,21 +247,83 @@ void swap(Request *a, Request *b) {
 }
 
 /* Bubble sort the given linked lsit */
-void bubbleSort() {
+void bubbleSort(int script) {
   int swapped;
   Request *ptr1;
   Request *lptr = NULL;
 
   /* Checking for empty list */
-  if (requests_buffer->request == NULL || requests_buffer->request->next)
+  if (requests_buffer->request == NULL || requests_buffer->request->next == NULL)
     return;
 
+  if (script == 0) {
+    do {
+      swapped = 0;
+      ptr1 = requests_buffer->request;
+
+      while (ptr1->next != lptr) {
+        int ptr1_is_script = is_script(ptr1->required_file);
+        int ptr1_next_is_script = is_script(ptr1->next->required_file);
+
+        if (ptr1_is_script == 0 && ptr1_next_is_script == 1) {
+          swap(ptr1, ptr1->next);
+          swapped = 1;
+        }
+        else if (ptr1_is_script == 1 && ptr1_next_is_script == 1) {
+          if (ptr1->ready > ptr1->next->ready) {
+            swap(ptr1, ptr1->next);
+            swapped = 1;
+          }
+        }
+        else if (ptr1_is_script == 0) {
+          if (ptr1->ready > ptr1->next->ready) {
+            swap(ptr1, ptr1->next);
+            swapped = 1;
+          }
+        }
+        ptr1 = ptr1->next;
+      }
+      lptr = ptr1;
+    } while (swapped);
+    return;
+  }
+  if (script == 1) {
+    do {
+      swapped = 0;
+      ptr1 = requests_buffer->request;
+
+      while (ptr1->next != lptr) {
+        int ptr1_is_script = is_script(ptr1->required_file);
+        int ptr1_next_is_script = is_script(ptr1->next->required_file);
+
+        if (ptr1_is_script == 1 && ptr1_next_is_script == 0) {
+          swap(ptr1, ptr1->next);
+          swapped = 1;
+        }
+        else if (ptr1_is_script == 0 && ptr1_next_is_script == 0) {
+          if (ptr1->ready > ptr1->next->ready) { 
+            swap(ptr1, ptr1->next);
+            swapped = 1;
+          }
+        }
+        else if (ptr1_is_script == 1) {
+          if (ptr1->ready > ptr1->next->ready) {
+            swap(ptr1, ptr1->next);
+            swapped = 1;
+          }
+        }
+        ptr1 = ptr1->next;
+      }
+      lptr = ptr1;
+    } while (swapped);
+    return;
+  }
   do {
     swapped = 0;
     ptr1 = requests_buffer->request;
 
     while (ptr1->next != lptr) {
-      if (ptr1->ready > ptr1->next->ready) { 
+      if (ptr1->ready > ptr1->next->ready) {
         swap(ptr1, ptr1->next);
         swapped = 1;
       }
@@ -269,4 +331,5 @@ void bubbleSort() {
     }
     lptr = ptr1;
   } while (swapped);
+  return;
 }

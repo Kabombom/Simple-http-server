@@ -31,6 +31,7 @@ typedef struct buffer {
 
 Buffer *requests_buffer;
 
+int is_script(char *filename);
 void create_buffer();
 void delete_buffer();
 void add_request_to_buffer(int ready, int conn, char *required_file, time_t get_request_time, time_t serve_request_time);
@@ -39,4 +40,4 @@ void compressed_add_request_to_buffer(int ready, int conn, char *required_file, 
 Request *get_request_by_fifo();
 void print_buffer();
 void swap(Request *a, Request *b);
-void bubbleSort();
+void bubbleSort(int is_scrip);
