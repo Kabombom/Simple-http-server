@@ -7,8 +7,11 @@ int main(int argc, char ** argv) {
   long get_request_time;
 
   create_shared_memory();
-  attach_shared_memory();
+  last_request = (Request*) malloc(sizeof(Request));
+  last_request->required_file = (char *) malloc(1024 * sizeof(char));
+  last_request->ready = 1;
   create_processes();
+  attach_shared_memory();
   configuration_start();
   create_buffer();
   create_semaphores();
@@ -447,20 +450,24 @@ void delete_shared_memory() {
 
 // Statistics process  function
 void statistics() {
+  last_request = (Request *) shmat(shmid_request, NULL, 0);
   signal(SIGUSR1, print_statistics);
+  //shmid_request = shmget(IPC_PRIVATE, sizeof(int), 0777);
   while(1) {
     if (last_request->required_file != NULL && last_request->ready == 0) {
+      last_request->ready = 1;
+      printf("++++++++++++++++++++++++++++++++\n");
       printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
+      printf("%ld\n", last_request->get_request_time);
+      printf("%s\n", last_request->required_file);
       //printf("____________________\n");
       //printf("%ld %ld\n", last_request->get_request_time, last_request->serve_request_time );
       //printf("____________________\n");
-      //get_request_information(page_or_script(last_request->required_file), last_request->required_file, last_request->get_request_time, last_request->serve_request_time);
+      //get_request_information(page_or_script(last_request->required_file), "index.html", last_request->get_request_time, last_request->serve_request_time);
+      //printf("FILEEEEE %s\n", last_request->required_file);
       printf("++++++++++++++++++++++++++++++++\n");
-      printf("%s\n", last_request->required_file);
-      printf("++++++++++++++++++++++++++++++++\n");
-      last_request->ready = 1;
-      free(last_request->required_file);
-      free(last_request);
+      //free(last_request->required_file);
+      //free(last_request);
     }
   }
 }
@@ -648,13 +655,13 @@ void *worker(void *id) {
     }
 
     close(req->conn);
-
     req->serve_request_time = get_current_time_with_ms();
-    last_request = (Request*) malloc(10 * sizeof(Request));
+
     last_request->ready = req->ready;
     last_request->conn = 0;
     last_request->required_file = (char *) malloc(1024 * sizeof(char));
     strcpy(last_request->required_file, req->required_file);
+    //last_request->required_file = req->required_file;
     last_request->get_request_time = req->get_request_time;
     last_request->serve_request_time = req->serve_request_time;
 
@@ -665,13 +672,13 @@ void *worker(void *id) {
     printf("%ld\n", last_request->serve_request_time);
     printf("**************************************\n");
 
-    pthread_mutex_unlock(buffer_mutex);
-
-    free(last_request->required_file);
-    free(last_request);
+    //free(last_request->required_file);
+    //free(last_request);
     free(req->required_file);
     free(req);
     threads_available[thread_id] = 0;
+
+    pthread_mutex_unlock(buffer_mutex);
   }
   return NULL;
 }

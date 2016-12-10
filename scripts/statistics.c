@@ -1,14 +1,20 @@
 #include "../includes/statistics.h"
 
 void print_statistics() {
+  if ((src = mmap ((caddr_t)0, SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED, fd, 0)) == (caddr_t) -1) {
+    printf("ERROR IN NMAP\n");
+    exit(1);
+  }
+  printf("MMF %s", src );
+
   long number_of_static_requests = 0;
   long number_of_compressed_requests = 0;
   long average_static_time = 0;
   long average_compressed_time = 0;
 
-  char str[] = "static index.html 1481306872087 1481306872088\nstatic index.html 1481306872090 1481306872100\ncompressed index.html 1481306872087 1481306872090\ncompressed index.html 1481306872090 1481306872100";
+  // char str[] = "static index.html 1481306872087 1481306872088\nstatic index.html 1481306872090 1481306872100\ncompressed index.html 1481306872087 1481306872090\ncompressed index.html 1481306872090 1481306872100";
   char *end_str;
-  char *token = strtok_r(str, "\n", &end_str);
+  char *token = strtok_r(src, "\n", &end_str);
   int index;
 
   while (token != NULL) {
@@ -73,11 +79,5 @@ void get_request_information(int type_of_request, char *filename, long request_t
 		exit(1);
 	}
 
-  if ((src = mmap ((caddr_t)0, SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED, fd, 0)) == (caddr_t) -1) {
-    printf("ERROR IN NMAP\n");
-    exit(1);
-  }
-
   write(fd, str, 100);
-  printf("Src %s\n", src );
 }

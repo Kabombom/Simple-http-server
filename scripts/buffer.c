@@ -56,7 +56,6 @@ void add_request_to_buffer(int ready, int conn, char *required_file, long get_re
     return;
   }
 
-  printf("PASSOU ALELUIAAAAAAAAAAAAAAAAAA\n");
   Request *aux = requests_buffer->request;
   new_request->next = aux;
   requests_buffer->request = new_request;
