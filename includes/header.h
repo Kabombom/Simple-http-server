@@ -102,7 +102,14 @@ int statistics_pid;
 int shmid;
 int shmid_request;
 
-Request *last_request;
+typedef struct statistics_struct {
+  int ready;
+  char file[1024];
+  long get_request_time;
+  long serve_request_time;
+} Statistics_Struct;
+
+Statistics_Struct *last_request;
 
 int *threads_available;
 
@@ -115,7 +122,5 @@ pthread_mutex_t *last_request_mutex;
 pthread_t *thread_pool;
 pthread_t pipe_thread;
 pthread_t scheduler;
-
-Request *last_requests;
 
 struct timeval tv;
