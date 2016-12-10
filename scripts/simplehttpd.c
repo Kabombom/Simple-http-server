@@ -18,6 +18,7 @@ int main(int argc, char ** argv) {
   signal(SIGINT, catch_ctrlc);
 
   port = config->serverport;
+  buffer_size = config->thread_pool*2;
   threads_available = (int *) calloc(config->thread_pool, sizeof(int));
 
   printf("Listening for HTTP requests on port %d\n", port);
@@ -45,7 +46,7 @@ int main(int argc, char ** argv) {
 
     char *filename = get_compressed_filename(req_buf);
 
-    if (requests_buffer->current_size == BUFFER_SIZE) {
+    if (requests_buffer->current_size == buffer_size) {
       printf("No buffer space available.\n");
       send_page(new_conn, "no_buffer_space_available.html");
       close(new_conn);
@@ -73,6 +74,8 @@ int main(int argc, char ** argv) {
       send_page(new_conn, "overload.html");
       close(new_conn);
     }
+
+    free(filename);
   }
   terminate();
 }
