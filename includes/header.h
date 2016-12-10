@@ -37,7 +37,6 @@
 #define GET_EXPR	"GET /"
 #define CGI_EXPR	"cgi-bin/"
 #define SIZE_BUF	1024
-#define BUFFER_SIZE 10 // Maximum number of requests in buffer
 
 // Pipe variables
 #define PIPE_NAME "named_pipe"
@@ -92,7 +91,7 @@ long get_current_time_with_ms();
 char buf[SIZE_BUF];
 char req_buf[SIZE_BUF];
 char buf_tmp[SIZE_BUF];
-int port, socket_conn, new_conn;
+int port, socket_conn, new_conn, buffer_size;
 
 // Processes ids
 int parent_pid;
