@@ -41,6 +41,9 @@
 // Pipe variables
 #define PIPE_NAME "named_pipe"
 
+#define FILENAME_SIZE 500
+#define FILEPATH_SIZE 800
+
 // Initial functions
 int  fireup(int port);
 void identify(int socket);
@@ -54,12 +57,14 @@ void catch_ctrlc(int);
 void cannot_execute(int socket);
 
 //Utils functions
+void handle_ctrlz(int signal);
+void handle_sigusr1(int signal);
+void handle_sigusr2(int signal);
 int file_exists(char *filepath);
 int page_or_script();
 int threads_are_available();
 char *get_compressed_filename(char *file_path);
 int compressed_file_is_allowed(char *filename);
-void handle_sigusr1(int signal);
 
 //Processes functions
 void statistics();
@@ -84,7 +89,6 @@ void delete_semaphores();
 void terminate_thread();
 void *worker();
 void create_workers();
-void delete_scheduler_threads();
 
 void terminate(int what_to_delete, int socket_conn_needs_to_be_closed);
 
@@ -116,10 +120,8 @@ Statistics_Struct *last_request;
 int *threads_available;
 
 // Semaphores id
-sem_t *sem_buffer_empty; //If buffer is empty the value of the sem is 0
-sem_t *sem_buffer_full; //If buffer is full the value of the sem is 0
+sem_t *sem_buffer_empty;
 pthread_mutex_t *buffer_mutex;
-pthread_mutex_t *last_request_mutex;
 
 pthread_t *thread_pool;
 pthread_t pipe_thread;

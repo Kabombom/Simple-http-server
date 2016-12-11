@@ -31,10 +31,8 @@ void delete_buffer() {
   while(aux->next != NULL) {
     tmp = aux;
     aux = aux->next;
-    //free(tmp->required_file);
     free(tmp);
   }
-  //free(aux->required_file);
   free(aux);
   requests_buffer->request = NULL;
   requests_buffer->current_size = 0;
@@ -46,7 +44,7 @@ void add_request_to_buffer(int type, int conn, char *required_file, long get_req
   Request *new_request = (Request *) malloc(sizeof(Request));
   new_request->type = type;
   new_request->conn = conn;
-  new_request->required_file = (char *) malloc(50 *sizeof(char));
+  new_request->required_file = (char *) malloc(REQUIRED_FILE_SIZE *sizeof(char));
   strcpy(new_request->required_file, required_file);
   new_request->get_request_time = get_request_time;
   new_request->serve_request_time = serve_request_time;
@@ -81,7 +79,7 @@ void add_static_request_to_buffer(int type, int conn, char *required_file, long 
   Request *new_request = (Request *) malloc(sizeof(Request));
   new_request->type = type;
   new_request->conn = conn;
-  new_request->required_file = (char *) malloc(50 *sizeof(char));
+  new_request->required_file = (char *) malloc(REQUIRED_FILE_SIZE *sizeof(char));
   strcpy(new_request->required_file, required_file);
   new_request->get_request_time = get_request_time;
   new_request->serve_request_time = serve_request_time;
@@ -136,7 +134,7 @@ void add_compressed_request_to_buffer(int type, int conn, char *required_file, l
   Request *new_request = (Request *) malloc(sizeof(Request));
   new_request->type = type;
   new_request->conn = conn;
-  new_request->required_file = (char *) malloc(50 *sizeof(char));
+  new_request->required_file = (char *) malloc(REQUIRED_FILE_SIZE *sizeof(char));
   strcpy(new_request->required_file, required_file);
   new_request->get_request_time = get_request_time;
   new_request->serve_request_time = serve_request_time;
@@ -188,11 +186,10 @@ Request *get_request_by_fifo() {
   Request *temp;
 
   if (current_node != NULL && current_node->next == NULL) {
-    printf("current_node eq: %s conn: %d\n", requests_buffer->request->required_file, requests_buffer->request->conn);
     temp = (Request*) malloc(sizeof(Request));
     temp->type = current_node->type;
     temp->conn = current_node->conn;
-    temp->required_file = (char*)malloc(1024*sizeof(char));
+    temp->required_file = (char *) malloc(1024 * sizeof(char));
     strcpy(temp->required_file, current_node->required_file);
     temp->get_request_time = current_node->get_request_time;
     temp->serve_request_time = current_node->serve_request_time;
@@ -200,7 +197,6 @@ Request *get_request_by_fifo() {
     free(current_node);
     requests_buffer->request = NULL;
     requests_buffer->current_size--;
-    printf("temp eq: %s conn: %d\n", temp->required_file, temp->conn);
     return temp;
   }
 

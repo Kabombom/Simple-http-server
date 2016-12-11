@@ -15,6 +15,8 @@
 #include <signal.h>
 #include <time.h>
 
+#define REQUIRED_FILE_SIZE 500
+
 typedef struct request {
   int type;
   int conn;

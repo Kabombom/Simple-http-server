@@ -22,7 +22,9 @@ int main(int argc, char ** argv) {
   memory_mapped_file();
 
   signal(SIGINT, catch_ctrlc);
+  signal(SIGTSTP, handle_ctrlz);
   signal(SIGUSR1, handle_sigusr1);
+  signal(SIGUSR2, handle_sigusr2);
 
   printf("Listening for HTTP requests on port %d\n", port);
 
@@ -48,7 +50,7 @@ int main(int argc, char ** argv) {
     get_request_time = get_request(new_conn);
 
     char *filename = get_compressed_filename(req_buf);
-    char *filepath = (char *) malloc(250*sizeof(char));
+    char *filepath = (char *) malloc(FILEPATH_SIZE * sizeof(char));
     sprintf(filepath, "htdocs/%s", req_buf);
     int is_page_or_script = page_or_script(req_buf);
     int exists = file_exists(filepath);
@@ -92,7 +94,15 @@ int main(int argc, char ** argv) {
   terminate(2, 1);
 }
 
+void handle_ctrlz(int sig) {
+  terminate(0, 0);
+}
+
 void handle_sigusr1(int sig) {
+  terminate(0, 0);
+}
+
+void handle_sigusr2(int sig) {
   terminate(0, 0);
 }
 
@@ -131,7 +141,7 @@ int threads_are_available() {
 
 char *get_compressed_filename(char *file_path) {
   int i;
-  char *filename = (char *) malloc(100*sizeof(char));
+  char *filename = (char *) malloc(FILENAME_SIZE*sizeof(char));
   int index = 0;
   for(i = 8; i < strlen(file_path); i++) {
     filename[index] = file_path[i];
@@ -212,7 +222,7 @@ void send_header(int socket) {
 char *get_filename(char *file_path) {
   int i;
   int passed_dot = 0;
-  char *filename = (char *) malloc(100*sizeof(char));
+  char *filename = (char *) malloc(FILENAME_SIZE*sizeof(char));
 
   for (i = 0; i < strlen(file_path); i++) {
     if (file_path[i] == 46 && passed_dot == 0) {
@@ -611,21 +621,15 @@ void read_from_pipe() {
 
 // Create semaphores
 void create_semaphores() {
-  sem_unlink("buffer_full");
-  sem_buffer_full = sem_open("buffer_full", O_CREAT|O_EXCL, 0700, config->thread_pool * 2);
   sem_unlink("buffer_empty");
   sem_buffer_empty = sem_open("buffer_empty", O_CREAT|O_EXCL, 0700, 0);
   buffer_mutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
   pthread_mutex_init(buffer_mutex, NULL);
-  last_request_mutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
-  pthread_mutex_init(last_request_mutex, NULL);
 }
 
 // Delete semaphores
 void delete_semaphores() {
   printf("Deleting semaphores...\n");
-  sem_unlink("buffer_full");
-  sem_close(sem_buffer_full);
   sem_unlink("buffer_empty");
   sem_close(sem_buffer_empty);
   pthread_mutex_destroy(buffer_mutex);

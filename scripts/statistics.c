@@ -1,14 +1,15 @@
 #include "../includes/statistics.h"
 
 void print_statistics() {
-  printf("..................................\n");
-  printf("%lld\n", average_static_time);
-  printf("%lld\n", average_compressed_time);
-  printf("..................................\n");
+  long long average_static_time = total_static_time;
+  long long average_compressed_time = total_compressed_time;
+  long long temporary_number_of_static_requests = number_of_static_requests;
+  long long temporary_number_of_compressed_requests = number_of_compressed_requests;
+
   if (number_of_static_requests != 0)
-    average_static_time = average_static_time / number_of_static_requests;
+    average_static_time = total_static_time / temporary_number_of_static_requests;
   if (number_of_compressed_requests != 0)
-    average_compressed_time = average_compressed_time / number_of_compressed_requests;
+    average_compressed_time = total_compressed_time / temporary_number_of_compressed_requests;
 
   printf("Número total de pedidos servidos (páginas estáticas): %ld \n"
   "Número total de pedidos servidos (ficheiros comprimidos): %ld \n"
@@ -25,12 +26,6 @@ void get_request_information(int type_of_request, char *filename, long request_t
   size_t length = 100;
 
   char *str = (char*) malloc(sizeof(char) * 1024);
-  printf("--------------------------------------------------------------\n");
-  printf("%d\n", type_of_request);
-  printf("%s\n", filename);
-  printf("%ld\n", request_time);
-  printf("%ld\n", delivery_time);
-  printf("--------------------------------------------------------------\n");
 
   char *string_type_of_request = (char*) malloc(1024 * sizeof(char));
   if (type_of_request == 1)
@@ -42,14 +37,11 @@ void get_request_information(int type_of_request, char *filename, long request_t
 
   if (strcmp(string_type_of_request, "static") == 0) {
     number_of_static_requests++;
-    average_static_time += delivery_time - request_time;
-    printf("==============================\n");
-    printf("%ld\n", delivery_time-request_time);
-    printf("==============================\n");
+    total_static_time += delivery_time - request_time;
   }
   else {
     number_of_compressed_requests++;
-    average_compressed_time += delivery_time - request_time;
+    total_compressed_time += delivery_time - request_time;
   }
 
   fd = open("server.log", O_RDWR, O_APPEND);
@@ -71,8 +63,8 @@ void get_request_information(int type_of_request, char *filename, long request_t
 void reset_statistics() {
   number_of_static_requests = 0;
   number_of_compressed_requests = 0;
-  average_static_time = 0;
-  average_compressed_time = 0;
+  total_static_time = 0;
+  total_compressed_time = 0;
 
   FILE *f = fopen("server.log", "w");
   fclose(f);
@@ -82,8 +74,8 @@ void reset_statistics() {
 void memory_mapped_file() {
   number_of_static_requests = 0;
   number_of_compressed_requests = 0;
-  average_static_time = 0;
-  average_compressed_time = 0;
+  total_static_time = 0;
+  total_compressed_time = 0;
   int fd;
   char *pmap = (char*) malloc(sizeof(char) * SIZE);
   struct stat sb;
