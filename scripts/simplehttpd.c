@@ -5,30 +5,31 @@ int main(int argc, char ** argv) {
   socklen_t client_name_len = sizeof(client_name);
   int port;
   long get_request_time;
+  FILE *fp;
 
   create_shared_memory();
   last_request = (Statistics_Struct *) malloc(sizeof(Request));
-  last_request->ready = 1;
+  last_request->type = 0;
   create_processes();
   attach_shared_memory();
   configuration_start();
-  create_buffer();
-  create_semaphores();
-  create_pipe_thread();
-  create_scheduler_threads();
-
-  signal(SIGINT, catch_ctrlc);
-
   port = config->serverport;
   buffer_size = config->thread_pool*2;
   threads_available = (int *) calloc(config->thread_pool, sizeof(int));
+  create_buffer();
+  create_semaphores();
+  create_pipe_thread();
+  create_workers();
+
+  signal(SIGINT, catch_ctrlc);
+  signal(SIGUSR1, handle_sigusr1);
 
   printf("Listening for HTTP requests on port %d\n", port);
 
   // Configure listening port
   // If port given is invalid, exit
   if ((socket_conn = fireup(port)) == -1) {
-    terminate();
+    terminate(2, 0);
   }
 
   // Serve requests
@@ -37,7 +38,7 @@ int main(int argc, char ** argv) {
     // Exit if error occurs while connecting
     if ((new_conn = accept(socket_conn, (struct sockaddr *)&client_name, &client_name_len)) == -1) {
       printf("Error accepting connection\n");
-      terminate();
+      terminate(2, 1);
     }
 
     // Identify new client by address and port
@@ -45,21 +46,33 @@ int main(int argc, char ** argv) {
 
     // Process request
     get_request_time = get_request(new_conn);
+    // /////////////////////////////////////////////////////////////////////////////////////////////////
+    char *filepath = (char *) malloc(500*sizeof(char));
+    sprintf(filepath, "htdocs/%s", req_buf);
+    // /////////////////////////////////////////////////////////////////////////////////////////////////
 
     char *filename = get_compressed_filename(req_buf);
+    int is_page_or_script = page_or_script(req_buf);
 
     if (requests_buffer->current_size == buffer_size) {
       printf("No buffer space available.\n");
       send_page(new_conn, "no_buffer_space_available.html");
       close(new_conn);
     }
-    else if ((page_or_script(req_buf) == 0 && compressed_file_is_allowed(filename) == 1) || page_or_script(req_buf) == 1) {
+    // /////////////////////////////////////////////////////////////////////////////////////////////////
+    else if ((fp = fopen(filepath, "rt")) == NULL) {
+      // Verifies if file exists
+      printf("send_page: page %s not found, alerting client\n", buf_tmp);
+      not_found(new_conn);
+    }
+    // /////////////////////////////////////////////////////////////////////////////////////////////////
+    else if ((is_page_or_script == 2 && compressed_file_is_allowed(filename) == 1) || is_page_or_script == 1) {
       if (strcmp(config->scheduling, "STATIC")) {
-        add_static_request_to_buffer(0, new_conn, req_buf, get_request_time, get_request_time);
+        add_static_request_to_buffer(is_page_or_script, new_conn, req_buf, get_request_time, get_request_time);
       } else if (strcmp(config->scheduling, "COMPRESSED")) {
-        add_compressed_request_to_buffer(0, new_conn, req_buf, get_request_time, get_request_time);
+        add_compressed_request_to_buffer(is_page_or_script, new_conn, req_buf, get_request_time, get_request_time);
       } else {
-        add_request_to_buffer(0, new_conn, req_buf, get_request_time, get_request_time);
+        add_request_to_buffer(is_page_or_script, new_conn, req_buf, get_request_time, get_request_time);
       }
       sem_post(sem_buffer_empty);
     }
@@ -76,22 +89,30 @@ int main(int argc, char ** argv) {
       send_page(new_conn, "overload.html");
       close(new_conn);
     }
-
+    // /////////////////////////////////////////////////////////////////////////////////////////////////
+    fclose(fp);
+    // /////////////////////////////////////////////////////////////////////////////////////////////////
+    free(filepath);
     free(filename);
   }
-  terminate();
+  terminate(2, 1);
 }
 
+// /////////////////////////////////////////////////////////////////////////////////////////////////
+void handle_sigusr1(int sig) {
+  terminate(0, 0);
+}
+// /////////////////////////////////////////////////////////////////////////////////////////////////
 
 long get_current_time_with_ms() {
   gettimeofday(&tv, NULL);
   return tv.tv_sec*1000 + tv.tv_usec/1000;
 }
 
-// Return 1 for page and 0 for script
+// Return 1 for page and 2 for script
 int page_or_script(char *required_file) {
   if(!strncmp(required_file, CGI_EXPR, strlen(CGI_EXPR))) {
-    return 0;
+    return 2;
   }
   return 1;
 }
@@ -156,7 +177,7 @@ long get_request(int socket) {
   // Currently only supports GET
   if(!found_get) {
     printf("Request from client without a GET\n");
-    terminate();
+    terminate(2, 1);
   }
 
   // If no particular page is requested then we consider htdocs/index.html
@@ -202,7 +223,7 @@ char *get_filename(char *file_path) {
 
   return filename;
 }
-
+// /////////////////////////////////////////////////////////////////////////////////////////////////
 // Execute script in /cgi-bin
 void execute_script(int socket, char *required_file) {
   char command[200] = "gzip -d ";
@@ -212,32 +233,29 @@ void execute_script(int socket, char *required_file) {
   sprintf(buf_tmp, "htdocs/%s", required_file);
   strcat(command, buf_tmp);
 
-  // Verifies if file exists
-  if((fp = fopen(buf_tmp, "rt")) == NULL) {
-    // Page not found, send error to client
-    printf("send_page: page %s not found, alerting client\n", buf_tmp);
-    not_found(socket);
+  run_unzip = system(command);
+  char *filename = get_filename(buf_tmp);
+  fp = fopen(filename, "rt");
+  // Page found, send to client
+  // First send HTTP header back to client
+  send_header(socket);
+  printf("send_page: sending page %s to client\n", filename);
+
+  while(fgets(filename, 100, fp)) {
+    send(socket, filename, strlen(filename), 0);
   }
-  else {
-    run_unzip = system(command);
-    char *filename = get_filename(buf_tmp);
-    // Page found, send to client
-    // First send HTTP header back to client
-    send_header(socket);
-    printf("send_page: sending page %s to client\n", filename);
-    fclose(fp);
-    fp = fopen(filename, "rt");
-    while(fgets(filename, 100, fp)) {
-      send(socket, filename, strlen(filename), 0);
-    }
-    // Close file
-    fclose(fp);
-  }
+
+  free(filename);
+
+  // Close file
+  fclose(fp);
 
   // cannot_execute(socket);
   return;
 }
+// /////////////////////////////////////////////////////////////////////////////////////////////////
 
+// /////////////////////////////////////////////////////////////////////////////////////////////////
 // Send html page to client
 void send_page(int socket, char *required_file) {
   FILE * fp;
@@ -250,27 +268,21 @@ void send_page(int socket, char *required_file) {
   #endif
 
   // Verifies if file exists
-  if((fp = fopen(buf_tmp, "rt")) == NULL) {
-    // Page not found, send error to client
-    printf("send_page: page %s not found, alerting client\n", buf_tmp);
-    not_found(socket);
-  }
-  else {
-    // Page found, send to client
-    // First send HTTP header back to client
-    send_header(socket);
+  fp = fopen(buf_tmp, "rt");
+  // Page found, send to client
+  // First send HTTP header back to client
+  send_header(socket);
 
-    printf("send_page: sending page %s to client\n", buf_tmp);
-    while(fgets(buf_tmp, SIZE_BUF, fp)) {
-      send(socket, buf_tmp, strlen(buf_tmp), 0);
-    }
-
-    // Close file
-    fclose(fp);
+  printf("send_page: sending page %s to client\n", buf_tmp);
+  while(fgets(buf_tmp, SIZE_BUF, fp)) {
+    send(socket, buf_tmp, strlen(buf_tmp), 0);
   }
+
+  // Close file
+  fclose(fp);
   return;
 }
-
+// /////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Identifies client (address and port) from socket
 void identify(int socket) {
@@ -403,7 +415,7 @@ void cannot_execute(int socket) {
 // Closes socket before closing
 void catch_ctrlc(int sig) {
   printf(" Server terminating\n");
-  terminate();
+  terminate(2, 1);
 }
 
 // Creates shared memory
@@ -411,13 +423,13 @@ void create_shared_memory() {
   shmid = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0777);
   if (shmid < 0) {
     printf("Error creating shared memory\n");
-    terminate_processes();
+    //terminate_processes();
     exit(0);
   }
   shmid_request = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0777);
   if (shmid_request < 0) {
     printf("Error creating shared memory for last request\n");
-    terminate_processes();
+    //terminate_processes();
     exit(0);
   }
 }
@@ -427,12 +439,16 @@ void attach_shared_memory() {
   config = (config_struct *) shmat(shmid, NULL, 0);
   if (config == (void *) - 1) {
     printf("Error attaching shared memory\n");
+    shmctl(shmid, IPC_RMID, NULL);
     terminate_processes();
     exit(0);
   }
   last_request = (Statistics_Struct *) shmat(shmid_request, NULL, 0);
   if (last_request == (void *) - 1) {
     printf("Error attaching shared memory of last reqeust\n");
+    shmdt(config);
+    shmctl(shmid, IPC_RMID, NULL);
+    shmctl(shmid_request, IPC_RMID, NULL);
     terminate_processes();
     exit(0);
   }
@@ -450,18 +466,14 @@ void delete_shared_memory() {
 // Statistics process  function
 void statistics() {
   last_request = (Statistics_Struct *) shmat(shmid_request, NULL, 0);
+  signal(SIGINT, SIG_IGN);
+  signal(SIGTSTP, SIG_IGN);
   signal(SIGUSR1, print_statistics);
+
   while(1) {
-    if (last_request->ready == 0) {
-      last_request->ready = 1;
-      printf("++++++++++++++++++++++++++++++++\n");
-      printf("Statistics id %d and parent id %d\n", statistics_pid, parent_pid);
-      printf("%ld\n", last_request->get_request_time);
-      printf("miguel\n");
-      printf("%s\n", last_request->file);
-      printf("machato\n");
-      get_request_information(page_or_script(last_request->file), last_request->file, last_request->get_request_time, last_request->serve_request_time);
-      printf("++++++++++++++++++++++++++++++++\n");
+    if (last_request->type != 0) {
+      last_request->type = 0;
+      get_request_information(last_request->type, last_request->file, last_request->get_request_time, last_request->serve_request_time);
     }
   }
 }
@@ -476,7 +488,8 @@ void create_processes() {
     exit(0);
   } else if (statistics_pid == -1){
     perror("Error creating statistics process\n");
-    terminate();
+    shmctl(shmid, IPC_RMID, NULL);
+    shmctl(shmid_request, IPC_RMID, NULL);
   }
 }
 
@@ -563,6 +576,7 @@ void *thread_pipe_routine() {
 void create_pipe_thread() {
   if (pthread_create(&pipe_thread, NULL, thread_pipe_routine, (void *)25) != 0) {
     perror("Error creating thread");
+    terminate(1, 0);
   }
 }
 
@@ -571,7 +585,7 @@ void start_pipe() {
   printf("----STARTING PIPE----\n");
   if (mkfifo(PIPE_NAME, O_CREAT|O_EXCL|0600)<0 && (errno != EEXIST)) {
     perror("Cannot create pipe: ");
-    terminate();
+    terminate(0, 0);
   }
   printf("Named pipe created.\n");
 }
@@ -582,7 +596,7 @@ void read_from_pipe() {
   int fd, pipe_received_values;
   if ((fd = open(PIPE_NAME, O_RDONLY)) < 0) {
       perror("Cannot open pipe for reading: ");
-      terminate();
+      terminate(1, 0);
   }
   config_struct_aux config_aux;
   while(1) {
@@ -634,14 +648,14 @@ void *worker(void *id) {
 
     threads_available[thread_id] = 1;
     Request *req = get_request_by_fifo();
-    printf("temp eq: %s conn: %d\n", req->required_file, req->conn);
     printf("===================\n");
-    printf("Thread that responded %d\n", (int)thread_id);
-    printf("%s\n", req->required_file);
+    printf("Thread that responded: %d\n", (int)thread_id);
+    printf("Type of file: %d\n", req->type);
+    printf("Required file: %s\n", req->required_file);
     printf("===================\n");
 
     is_page = page_or_script(req->required_file);
-    if(is_page == 0) {
+    if(is_page == 2) {
       execute_script(req->conn, req->required_file);
     }
     else {
@@ -653,9 +667,8 @@ void *worker(void *id) {
     strcpy(last_request->file, req->required_file);
     last_request->get_request_time = req->get_request_time;
     last_request->serve_request_time = req->serve_request_time;
-    last_request->ready = req->ready;
+    last_request->type = req->type;
 
-    //free(last_request->required_file);
     //free(last_request);
     free(req->required_file);
     free(req);
@@ -667,7 +680,7 @@ void *worker(void *id) {
 }
 
 // Create pool of threads
-void create_scheduler_threads() {
+void create_workers() {
   int i;
   long ids[config -> thread_pool];
   // Create pool of threads
@@ -675,6 +688,7 @@ void create_scheduler_threads() {
 
   if (thread_pool == NULL) {
     perror("Error allocating memory for threads\n");
+    terminate(1, 0);
   }
 
   // Create threads
@@ -682,43 +696,57 @@ void create_scheduler_threads() {
     ids[i] = i;
     if (pthread_create(&thread_pool[i], NULL, worker, (void *)ids[i]) != 0) {
       perror("Error creating thread");
+      terminate(1, 0);
     }
-  }
-}
-
-// Delete threads
-void delete_scheduler_threads() {
-  printf("Cleaning up scheduler...\n");
-  int i;
-  for (i = 0; i < config->thread_pool; i++) {
-    pthread_join(thread_pool[i], NULL);
   }
 }
 
 // When program terminates, clean resources
-void terminate() {
+void terminate(int what_to_delete, int socket_conn_needs_to_be_closed) {
   int i;
-
-  //close(new_conn);
-  close(socket_conn);
-  if(pthread_kill(pipe_thread, SIGUSR1) != 0) {
-    printf("Error deleting console thread\n");
+  if (what_to_delete == 0) {
+    terminate_processes();
+    delete_semaphores();
+    delete_shared_memory();
+    delete_buffer();
+    exit(0);
   }
-  for (i = 0; i < config->thread_pool; i++) {
-    if(pthread_kill(thread_pool[i], SIGUSR1) != 0) {
-      printf("Error deleting thread\n");
+  else if (what_to_delete == 1) {
+    if(pthread_kill(pipe_thread, SIGUSR1) != 0) {
+      printf("Error deleting console thread\n");
     }
+    pthread_join(pipe_thread, NULL);
+    terminate_processes();
+    delete_semaphores();
+    delete_shared_memory();
+    delete_buffer();
+    free(thread_pool);
+    free(threads_available);
+    exit(0);
   }
-  // To kill a thread use pthread_kill. But that has to be done before pthread_join, otherwise the thread has already exited
-  pthread_join(pipe_thread, NULL);
-  for (i = 0; i < config->thread_pool; i++) {
-    pthread_join(thread_pool[i], NULL);
+  else if (what_to_delete == 2) {
+    if (socket_conn_needs_to_be_closed == 1) {
+      close(new_conn);
+      close(socket_conn);
+    }
+    if(pthread_kill(pipe_thread, SIGUSR1) != 0) {
+      printf("Error deleting console thread\n");
+    }
+    for (i = 0; i < config->thread_pool; i++) {
+      if(pthread_kill(thread_pool[i], SIGUSR1) != 0) {
+        printf("Error deleting thread\n");
+      }
+    }
+    pthread_join(pipe_thread, NULL);
+    for (i = 0; i < config->thread_pool; i++) {
+      pthread_join(thread_pool[i], NULL);
+    }
+    terminate_processes();
+    delete_semaphores();
+    delete_shared_memory();
+    delete_buffer();
+    free(thread_pool);
+    free(threads_available);
+    exit(0);
   }
-  //wait(NULL);
-  terminate_processes();
-  delete_shared_memory();
-  delete_buffer();
-  delete_semaphores();
-  free(thread_pool);
-  exit(0);
 }

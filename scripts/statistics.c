@@ -66,6 +66,13 @@ void get_request_information(int type_of_request, char *filename, long request_t
   src = (char *) malloc(SIZE * sizeof(char));
   char str[100];
 
+  printf("--------------------------------------------------------------\n");
+  printf("%d\n", type_of_request);
+  printf("%s\n", filename);
+  printf("%ld\n", request_time);
+  printf("%ld\n", delivery_time);
+  printf("--------------------------------------------------------------\n");
+
   char *string_type_of_request = (char*) malloc(1024 * sizeof(char));
   if (type_of_request == 1)
     strcpy(string_type_of_request, "static");

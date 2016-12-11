@@ -58,6 +58,7 @@ int page_or_script();
 int threads_are_available();
 char *get_compressed_filename(char *file_path);
 int compressed_file_is_allowed(char *filename);
+void handle_sigusr1(int signal);
 
 //Processes functions
 void statistics();
@@ -81,10 +82,10 @@ void create_semaphores();
 void delete_semaphores();
 void terminate_thread();
 void *worker();
-void create_scheduler_threads();
+void create_workers();
 void delete_scheduler_threads();
 
-void terminate();
+void terminate(int what_to_delete, int socket_conn_needs_to_be_closed);
 
 long get_current_time_with_ms();
 
@@ -103,7 +104,7 @@ int shmid;
 int shmid_request;
 
 typedef struct statistics_struct {
-  int ready;
+  int type;
   char file[1024];
   long get_request_time;
   long serve_request_time;
