@@ -54,6 +54,7 @@ void catch_ctrlc(int);
 void cannot_execute(int socket);
 
 //Utils functions
+int file_exists(char *filepath);
 int page_or_script();
 int threads_are_available();
 char *get_compressed_filename(char *file_path);
@@ -87,7 +88,7 @@ void delete_scheduler_threads();
 
 void terminate(int what_to_delete, int socket_conn_needs_to_be_closed);
 
-long get_current_time_with_ms();
+long get_current_time_in_microseconds();
 
 char buf[SIZE_BUF];
 char req_buf[SIZE_BUF];

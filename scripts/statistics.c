@@ -1,6 +1,10 @@
 #include "../includes/statistics.h"
 
 void print_statistics() {
+  printf("..................................\n");
+  printf("%lld\n", average_static_time);
+  printf("%lld\n", average_compressed_time);
+  printf("..................................\n");
   if (number_of_static_requests != 0)
     average_static_time = average_static_time / number_of_static_requests;
   if (number_of_compressed_requests != 0)
@@ -8,8 +12,8 @@ void print_statistics() {
 
   printf("Número total de pedidos servidos (páginas estáticas): %ld \n"
   "Número total de pedidos servidos (ficheiros comprimidos): %ld \n"
-  "Tempo médio para servir um pedido a conteúdo estático não comprimido: %ld ms\n"
-  "Tempo médio para servir um pedido a conteúdo estático comprimido: %ld ms\n",
+  "Tempo médio para servir um pedido a conteúdo estático não comprimido: %lld microsegundos\n"
+  "Tempo médio para servir um pedido a conteúdo estático comprimido: %lld microsegundos\n",
   number_of_static_requests, number_of_compressed_requests, average_static_time, average_compressed_time);
 }
 
@@ -38,11 +42,14 @@ void get_request_information(int type_of_request, char *filename, long request_t
 
   if (strcmp(string_type_of_request, "static") == 0) {
     number_of_static_requests++;
-    average_static_time = delivery_time - request_time;
+    average_static_time += delivery_time - request_time;
+    printf("==============================\n");
+    printf("%ld\n", delivery_time-request_time);
+    printf("==============================\n");
   }
   else {
     number_of_compressed_requests++;
-    average_compressed_time = delivery_time - request_time;
+    average_compressed_time += delivery_time - request_time;
   }
 
   fd = open("server.log", O_RDWR, O_APPEND);

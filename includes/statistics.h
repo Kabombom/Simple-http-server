@@ -15,8 +15,8 @@ char *pmap;
 
 long number_of_static_requests;
 long number_of_compressed_requests;
-long average_static_time;
-long average_compressed_time;
+long long average_static_time;
+long long average_compressed_time;
 
 void memory_mapped_file();
 void print_statistics();

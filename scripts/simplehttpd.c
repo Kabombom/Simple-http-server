@@ -5,7 +5,6 @@ int main(int argc, char ** argv) {
   socklen_t client_name_len = sizeof(client_name);
   int port;
   long get_request_time;
-  FILE *fp;
 
   create_shared_memory();
   last_request = (Statistics_Struct *) malloc(sizeof(Request));
@@ -51,20 +50,17 @@ int main(int argc, char ** argv) {
     char *filename = get_compressed_filename(req_buf);
     char *filepath = (char *) malloc(250*sizeof(char));
     sprintf(filepath, "htdocs/%s", req_buf);
-    printf(".......................................................\n");
-    printf("%s\n", filepath);
-    printf(".......................................................\n");
     int is_page_or_script = page_or_script(req_buf);
+    int exists = file_exists(filepath);
 
-    if (requests_buffer->current_size == buffer_size) {
-      printf("No buffer space available.\n");
-      send_page(new_conn, "no_buffer_space_available.html");
-      close(new_conn);
-    }
-    else if ((fp = fopen(filepath, "rt")) == NULL) {
-      // Verifies if file exists
+    if (exists == 0) {
       printf("send_page: page %s not found, alerting client\n", filepath);
       not_found(new_conn);
+      close(new_conn);
+    }
+    else if (requests_buffer->current_size == buffer_size) {
+      printf("No buffer space available.\n");
+      send_page(new_conn, "no_buffer_space_available.html");
       close(new_conn);
     }
     else if ((is_page_or_script == 2 && compressed_file_is_allowed(filename) == 1) || is_page_or_script == 1) {
@@ -83,14 +79,13 @@ int main(int argc, char ** argv) {
       close(new_conn);
     }
 
-    if (threads_are_available() == 1) {
+    if (threads_are_available() == 1 && exists == 1) {
       printf("Thread received work\n");
-    } else {
+    } else if (exists == 1) {
       printf("No available threads at the moment\n");
       send_page(new_conn, "overload.html");
       close(new_conn);
     }
-    fclose(fp);
     free(filepath);
     free(filename);
   }
@@ -101,9 +96,19 @@ void handle_sigusr1(int sig) {
   terminate(0, 0);
 }
 
-long get_current_time_with_ms() {
+int file_exists(char *filepath) {
+  FILE *fp;
+
+  if ((fp = fopen(filepath, "rt")) == NULL) {
+    return 0;
+  }
+  fclose(fp);
+  return 1;
+}
+
+long get_current_time_in_microseconds() {
   gettimeofday(&tv, NULL);
-  return tv.tv_sec*1000 + tv.tv_usec/1000;
+  return tv.tv_sec*1000 + tv.tv_usec;
 }
 
 // Return 1 for page and 2 for script
@@ -186,7 +191,7 @@ long get_request(int socket) {
   printf("get_request: client requested the following page: %s\n",req_buf);
   #endif
 
-  return get_current_time_with_ms();
+  return get_current_time_in_microseconds();
 }
 
 
@@ -657,7 +662,7 @@ void *worker(void *id) {
       send_page(req->conn, req->required_file);
     }
     close(req->conn);
-    req->serve_request_time = get_current_time_with_ms();
+    req->serve_request_time = get_current_time_in_microseconds();
 
     strcpy(last_request->file, req->required_file);
     last_request->get_request_time = req->get_request_time;
