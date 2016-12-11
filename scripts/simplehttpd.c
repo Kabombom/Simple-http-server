@@ -20,6 +20,7 @@ int main(int argc, char ** argv) {
   create_semaphores();
   create_pipe_thread();
   create_workers();
+  memory_mapped_file();
 
   signal(SIGINT, catch_ctrlc);
   signal(SIGUSR1, handle_sigusr1);
@@ -46,12 +47,13 @@ int main(int argc, char ** argv) {
 
     // Process request
     get_request_time = get_request(new_conn);
-    // /////////////////////////////////////////////////////////////////////////////////////////////////
-    char *filepath = (char *) malloc(500*sizeof(char));
-    sprintf(filepath, "htdocs/%s", req_buf);
-    // /////////////////////////////////////////////////////////////////////////////////////////////////
 
     char *filename = get_compressed_filename(req_buf);
+    char *filepath = (char *) malloc(250*sizeof(char));
+    sprintf(filepath, "htdocs/%s", req_buf);
+    printf(".......................................................\n");
+    printf("%s\n", filepath);
+    printf(".......................................................\n");
     int is_page_or_script = page_or_script(req_buf);
 
     if (requests_buffer->current_size == buffer_size) {
@@ -59,13 +61,12 @@ int main(int argc, char ** argv) {
       send_page(new_conn, "no_buffer_space_available.html");
       close(new_conn);
     }
-    // /////////////////////////////////////////////////////////////////////////////////////////////////
     else if ((fp = fopen(filepath, "rt")) == NULL) {
       // Verifies if file exists
-      printf("send_page: page %s not found, alerting client\n", buf_tmp);
+      printf("send_page: page %s not found, alerting client\n", filepath);
       not_found(new_conn);
+      close(new_conn);
     }
-    // /////////////////////////////////////////////////////////////////////////////////////////////////
     else if ((is_page_or_script == 2 && compressed_file_is_allowed(filename) == 1) || is_page_or_script == 1) {
       if (strcmp(config->scheduling, "STATIC")) {
         add_static_request_to_buffer(is_page_or_script, new_conn, req_buf, get_request_time, get_request_time);
@@ -89,20 +90,16 @@ int main(int argc, char ** argv) {
       send_page(new_conn, "overload.html");
       close(new_conn);
     }
-    // /////////////////////////////////////////////////////////////////////////////////////////////////
     fclose(fp);
-    // /////////////////////////////////////////////////////////////////////////////////////////////////
     free(filepath);
     free(filename);
   }
   terminate(2, 1);
 }
 
-// /////////////////////////////////////////////////////////////////////////////////////////////////
 void handle_sigusr1(int sig) {
   terminate(0, 0);
 }
-// /////////////////////////////////////////////////////////////////////////////////////////////////
 
 long get_current_time_with_ms() {
   gettimeofday(&tv, NULL);
@@ -223,7 +220,6 @@ char *get_filename(char *file_path) {
 
   return filename;
 }
-// /////////////////////////////////////////////////////////////////////////////////////////////////
 // Execute script in /cgi-bin
 void execute_script(int socket, char *required_file) {
   char command[200] = "gzip -d ";
@@ -253,9 +249,7 @@ void execute_script(int socket, char *required_file) {
   // cannot_execute(socket);
   return;
 }
-// /////////////////////////////////////////////////////////////////////////////////////////////////
 
-// /////////////////////////////////////////////////////////////////////////////////////////////////
 // Send html page to client
 void send_page(int socket, char *required_file) {
   FILE * fp;
@@ -282,7 +276,6 @@ void send_page(int socket, char *required_file) {
   fclose(fp);
   return;
 }
-// /////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Identifies client (address and port) from socket
 void identify(int socket) {
@@ -469,11 +462,13 @@ void statistics() {
   signal(SIGINT, SIG_IGN);
   signal(SIGTSTP, SIG_IGN);
   signal(SIGUSR1, print_statistics);
+  signal(SIGUSR2, reset_statistics);
 
   while(1) {
     if (last_request->type != 0) {
+      printf("Statistics id %d and parent id %d\n", statistics_pid, getppid());
       last_request->type = 0;
-      get_request_information(last_request->type, last_request->file, last_request->get_request_time, last_request->serve_request_time);
+      get_request_information(page_or_script(last_request->file), last_request->file, last_request->get_request_time, last_request->serve_request_time);
     }
   }
 }
