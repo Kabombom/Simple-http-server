@@ -37,10 +37,12 @@
 #define GET_EXPR	"GET /"
 #define CGI_EXPR	"cgi-bin/"
 #define SIZE_BUF	1024
-#define BUFFER_SIZE 10 // Maximum number of requests in buffer
 
 // Pipe variables
 #define PIPE_NAME "named_pipe"
+
+#define FILENAME_SIZE 500
+#define FILEPATH_SIZE 800
 
 // Initial functions
 int  fireup(int port);
@@ -55,6 +57,10 @@ void catch_ctrlc(int);
 void cannot_execute(int socket);
 
 //Utils functions
+void handle_ctrlz(int signal);
+void handle_sigusr1(int signal);
+void handle_sigusr2(int signal);
+int file_exists(char *filepath);
 int page_or_script();
 int threads_are_available();
 char *get_compressed_filename(char *file_path);
@@ -82,17 +88,16 @@ void create_semaphores();
 void delete_semaphores();
 void terminate_thread();
 void *worker();
-void create_scheduler_threads();
-void delete_scheduler_threads();
+void create_workers();
 
-void terminate();
+void terminate(int what_to_delete, int socket_conn_needs_to_be_closed);
 
-long get_current_time_with_ms();
+long get_current_time_in_microseconds();
 
 char buf[SIZE_BUF];
 char req_buf[SIZE_BUF];
 char buf_tmp[SIZE_BUF];
-int port, socket_conn, new_conn;
+int port, socket_conn, new_conn, buffer_size;
 
 // Processes ids
 int parent_pid;
@@ -101,18 +106,25 @@ int statistics_pid;
 
 // Shared memory ids
 int shmid;
+int shmid_request;
+
+typedef struct statistics_struct {
+  int type;
+  char file[1024];
+  long get_request_time;
+  long serve_request_time;
+} Statistics_Struct;
+
+Statistics_Struct *last_request;
 
 int *threads_available;
 
 // Semaphores id
-sem_t *sem_buffer_empty; //If buffer is empty the value of the sem is 0
-sem_t *sem_buffer_full; //If buffer is full the value of the sem is 0
+sem_t *sem_buffer_empty;
 pthread_mutex_t *buffer_mutex;
 
 pthread_t *thread_pool;
 pthread_t pipe_thread;
 pthread_t scheduler;
-
-Request *last_requests;
 
 struct timeval tv;

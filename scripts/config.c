@@ -24,6 +24,8 @@ void configuration_start() {
   config -> scheduling = scheduling;
   config -> thread_pool = atoi(threadpool);
   config -> allowed = allowed;
+  free(serverport);
+  free(threadpool);
   return;
 }
 

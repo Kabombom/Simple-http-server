@@ -1,4 +1,4 @@
 51000
 NORMAL
 5
-a.gz;b.gz
+a.gz;test.html.gz;b.gz
